@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1025036151999",
+    "project_id": "recapapp-79e38",
+    "storage_bucket": "recapapp-79e38.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1025036151999:android:4da1348b286ae5da716a0a",
+        "android_client_info": {
+          "package_name": "com.example.recappage"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1025036151999-rgefgrrjp567ft5qikaviup0um6mtu77.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFWZXlZGNWc8O6TVEIanZXByJxIZ6uRLA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1025036151999-rgefgrrjp567ft5qikaviup0um6mtu77.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
