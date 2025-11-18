@@ -160,7 +160,7 @@ fun FavouriteRecipeCard(
         }
 
         Image(
-            painter = painterResource(R.drawable.redlove),
+            painter = painterResource(R.drawable.new_love),
             contentDescription = "Unlove",
             modifier = Modifier
                 .align(Alignment.TopEnd)

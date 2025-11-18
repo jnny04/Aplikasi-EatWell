@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.recappage.R
 import com.example.recappage.model.FoodRecipes
+import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.viewmodel.SearchViewModel
 import com.example.recappage.util.NetworkResult
@@ -89,7 +90,7 @@ fun PencarianScreen(
                     keyboardActions = KeyboardActions(
                         onSearch = {
                             if (query.isNotEmpty()) {
-                                navController.navigate("foodLibrary/$query")
+                                navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
                         }
                     ),
@@ -119,7 +120,7 @@ fun PencarianScreen(
                         .size(16.dp)
                         .clickable {
                             if (query.isNotEmpty()) {
-                                navController.navigate("foodLibrary/$query")
+                                navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
                         }
                 )
@@ -131,6 +132,7 @@ fun PencarianScreen(
 
         /** 🟠 REAL-TIME SUGGESTION LIST **/
         if (query.isNotEmpty() && suggestions.isNotEmpty()) {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,7 +152,7 @@ fun PencarianScreen(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .clickable {
-                                navController.navigate("foodLibrary/$title")
+                                navController.navigate(Screen.FoodLibrary.createRoute(title))
                             }
                     ) {
                         Text(
@@ -169,8 +171,7 @@ fun PencarianScreen(
             }
         }
 
-
-        /** 🔵 RESULT LIST AFTER SEARCH **/
+        /** 🔵 SEARCH RESULTS **/
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -181,12 +182,10 @@ fun PencarianScreen(
             when (searchResult) {
 
                 is NetworkResult.Success -> {
-
                     val data = (searchResult as NetworkResult.Success<FoodRecipes>).data
                     val list = data?.recipes ?: emptyList()
 
                     list.forEach { recipe ->
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -214,7 +213,11 @@ fun PencarianScreen(
                 }
 
                 is NetworkResult.Loading -> {
-                    Text("Searching...", color = Color.Gray, fontSize = 12.sp)
+                    Text(
+                        "Searching...",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
                 }
 
                 null -> {}

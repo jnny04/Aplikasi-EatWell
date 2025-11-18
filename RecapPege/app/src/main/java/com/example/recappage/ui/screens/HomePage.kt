@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -79,7 +81,8 @@ fun HomePage(navController: NavHostController) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 90.dp)
+                    .padding(bottom = 5.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
 
                 TopBorder(navController = navController)
@@ -205,7 +208,6 @@ fun SpinWheelSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(520.dp)
             .padding(horizontal = 36.dp),
         contentAlignment = Alignment.TopStart
     ) {
@@ -214,12 +216,12 @@ fun SpinWheelSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 150.dp)
+                .padding(top = 10.dp)
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center
         ) {
             SpinWheel(
-                modifier = Modifier.size(420.dp),
+                modifier = Modifier.size(360.dp),
                 onClick = {
                     if (!spinning) {
                         spinning = true

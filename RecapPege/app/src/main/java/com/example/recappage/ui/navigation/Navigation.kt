@@ -23,13 +23,10 @@ sealed class Screen(val route: String) {
     object MonthlyRecap : Screen("monthly_recap")
     object IntakeDetail : Screen("intake_detail")
     object HomePage : Screen("home_page")
-
-    object FoodLibrary : Screen("foodLibrary/{query}") {
-        fun createRoute(query: String) =
+    object FoodLibrary : Screen("foodLibrary") {
+        fun createRoute(query: String): String =
             "foodLibrary/${URLEncoder.encode(query, "UTF-8")}"
     }
-
-
     object Favorites : Screen("favorites")
     object Scanner : Screen("scanner")
     object MenuDetails : Screen("menuDetails/{id}") {
@@ -93,9 +90,24 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         // ---------------- FOOD LIBRARY ----------------
+        // ---------------- FOOD LIBRARY tanpa query (bottom nav) ----------------
         composable(
-            route = Screen.FoodLibrary.route,
-            arguments = listOf(navArgument("query") { type = NavType.StringType })
+            route = Screen.FoodLibrary.route
+        ) {
+            val favVM: FavouriteViewModel = hiltViewModel()
+            FoodLibraryPage(
+                navController = navController,
+                favVM = favVM,
+                searchQuery = null
+            )
+        }
+
+// ---------------- FOOD LIBRARY dengan query (search) ----------------
+        composable(
+            route = "foodLibrary/{query}",
+            arguments = listOf(
+                navArgument("query") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
 
             val favVM: FavouriteViewModel = hiltViewModel(backStackEntry)
@@ -109,19 +121,9 @@ fun AppNavigation(navController: NavHostController) {
                 searchQuery = decoded
             )
         }
-
-        composable(Screen.Favorites.route) {
-            val favVM: FavouriteViewModel = hiltViewModel()
-            FavouritePage(
-                navController = navController,
-                favVM = favVM
-            )
-        }
-
         composable(Screen.Scanner.route) {
             ScannerPage(navController)
         }
-
         // ---------------- PROFILE ----------------
         composable(Screen.Profile.route) {
 
