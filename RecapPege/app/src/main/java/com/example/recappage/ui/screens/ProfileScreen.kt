@@ -12,9 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +25,13 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -36,6 +40,7 @@ import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.viewmodel.StreakViewModel
+import com.example.recappage.ui.theme.SourceSans3
 
 @Composable
 fun ProfileScreen(
@@ -44,24 +49,22 @@ fun ProfileScreen(
     regViewModel: RegistrationViewModel,
     modifier: Modifier = Modifier
 ) {
-    val serif = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
+    val context = LocalContext.current
 
-    // ✅ Load streak
+    // Load data
     val streakDays by streakViewModel.streakDays.collectAsState()
-
-    // ✅ Load Firestore data ONCE
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
-
-    // ✅ Loading indicator while fetching Firestore
     val isLoading = regViewModel.isLoading.value
 
+    // Image Picker Logic
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
-        imageUri = it
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        imageUri = uri
     }
+    val loadedUrl = regViewModel.profileImageUrl.value
 
     val scroll = rememberScrollState()
 
@@ -71,7 +74,7 @@ fun ProfileScreen(
             .background(Color.White)
     ) {
 
-        // Header
+        // Header Image
         Image(
             painter = painterResource(id = R.drawable.untitleddesign91),
             contentDescription = null,
@@ -84,11 +87,7 @@ fun ProfileScreen(
         )
 
         if (isLoading) {
-            // ✅ UI loading
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = Color(0xFF5CA135))
             }
         } else {
@@ -101,7 +100,7 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Top bar
+                // Top Bar
                 Box(Modifier.fillMaxWidth()) {
                     Text(
                         text = "Edit Profile",
@@ -132,10 +131,11 @@ fun ProfileScreen(
                         .background(Color.White)
                 ) {
 
-                    // Background blur
-                    if (imageUri != null) {
+                    // Background Blur Logic
+                    val backgroundModel = imageUri ?: loadedUrl
+                    if (backgroundModel != null) {
                         AsyncImage(
-                            model = imageUri,
+                            model = backgroundModel,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -149,59 +149,33 @@ fun ProfileScreen(
                             painter = painterResource(id = R.drawable.profile_blur),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }
-                                .clip(RoundedCornerShape(12.dp))
+                            modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }.clip(RoundedCornerShape(12.dp))
                         )
                     }
 
                     // Avatar
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = 24.dp)
-                    ) {
+                    Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp)) {
                         Box(
-                            modifier = Modifier
-                                .size(110.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color(0xFFE0E0E0), CircleShape),
+                            modifier = Modifier.size(110.dp).clip(CircleShape).border(2.dp, Color(0xFFE0E0E0), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .size(106.dp)
-                                    .clip(CircleShape)
-                                    .border(3.dp, Color.White, CircleShape),
+                                modifier = Modifier.size(106.dp).clip(CircleShape).border(3.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (imageUri != null) {
-                                    AsyncImage(
-                                        model = imageUri,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.size(100.dp).clip(CircleShape)
-                                    )
+                                    AsyncImage(model = imageUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(100.dp).clip(CircleShape))
+                                } else if (loadedUrl != null) {
+                                    AsyncImage(model = loadedUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(100.dp).clip(CircleShape))
                                 } else {
-                                    Icon(
-                                        imageVector = Icons.Default.AccountCircle,
-                                        contentDescription = null,
-                                        tint = Color(0xFF9E9E9E),
-                                        modifier = Modifier.size(100.dp)
-                                    )
+                                    Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(100.dp))
                                 }
                             }
                         }
-
                         Image(
                             painter = painterResource(id = R.drawable.camera_profile),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(36.dp)
-                                .offset(x = (-4).dp, y = (-4).dp)
-                                .clickable { pickImage.launch("image/*") }
+                            contentDescription = "Change Picture",
+                            modifier = Modifier.align(Alignment.BottomEnd).size(36.dp).offset(x = (-4).dp, y = (-4).dp).clickable { pickImage.launch("image/*") }
                         )
                     }
 
@@ -211,30 +185,13 @@ fun ProfileScreen(
                         color = Color.Black,
                         fontSize = 20.sp,
                         fontFamily = serifBold,
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 32.dp, bottom = 50.dp)
+                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 32.dp, bottom = 50.dp)
                     )
 
                     // Streak
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 28.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.streak),
-                            contentDescription = null,
-                            modifier = Modifier.size(150.dp)
-                        )
-                        Text(
-                            text = "$streakDays days",
-                            color = Color(0xFF555555),
-                            fontSize = 20.sp,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .offset(y = (-30).dp)
-                        )
+                    Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 28.dp)) {
+                        Image(painter = painterResource(id = R.drawable.streak), contentDescription = null, modifier = Modifier.size(150.dp))
+                        Text(text = "$streakDays days", color = Color(0xFF555555), fontSize = 20.sp, modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-30).dp))
                     }
                 }
 
@@ -251,12 +208,20 @@ fun ProfileScreen(
                         .background(Color.White)
                         .padding(horizontal = 12.dp, vertical = 10.dp)
                 ) {
-
+                    // 1. Email (Input Biasa)
                     EditableField("Email", regViewModel.email.value) { regViewModel.email.value = it }
-                    EditableField("Gender", regViewModel.gender.value ?: "") { regViewModel.gender.value = it }
-                    EditableField("Age", regViewModel.age.value) { regViewModel.age.value = it }
-                    EditableField("Height", regViewModel.height.value) { regViewModel.height.value = it }
-                    EditableField("Weight", regViewModel.weight.value) { regViewModel.weight.value = it }
+
+                    // 2. Gender (Dropdown: Male/Female)
+                    GenderDropdownField("Gender", regViewModel.gender.value ?: "") { regViewModel.gender.value = it }
+
+                    // 3. Age (Suffix: years, Number Only)
+                    SuffixEditableField("Age", regViewModel.age.value, "years") { regViewModel.age.value = it }
+
+                    // 4. Height (Suffix: cm, Number Only)
+                    SuffixEditableField("Height", regViewModel.height.value, "cm") { regViewModel.height.value = it }
+
+                    // 5. Weight (Suffix: kg, Number Only)
+                    SuffixEditableField("Weight", regViewModel.weight.value, "kg") { regViewModel.weight.value = it }
                 }
 
                 Spacer(Modifier.height(20.dp))
@@ -267,8 +232,15 @@ fun ProfileScreen(
                 Button(
                     onClick = {
                         regViewModel.updateUserProfile(
-                            onSuccess = { println("Profile updated") },
-                            onFailure = { println("Error: $it") }
+                            context = context,
+                            imageUri = imageUri,
+                            onSuccess = {
+                                println("Profile updated successfully!")
+                                imageUri = null
+                            },
+                            onFailure = { errorMsg ->
+                                println("Error: $errorMsg")
+                            }
                         )
                     },
                     modifier = Modifier
@@ -290,20 +262,23 @@ fun ProfileScreen(
     }
 }
 
-
+// -----------------------------------------------------------------
+// 1. KOMPONEN BIASA (Untuk Email) - Font Source Sans 3
+// -----------------------------------------------------------------
 @Composable
 private fun EditableField(
     label: String,
     text: String,
     onChange: (String) -> Unit
 ) {
-    val font = FontFamily(Font(R.font.source_serif_pro_regular))
+    val fontLabel = FontFamily(Font(R.font.source_serif_pro_regular))
+    // Tidak perlu 'val fontInput' manual lagi
 
     Column {
         Text(
             text = label,
             color = Color(0xFF2E7D32),
-            fontFamily = font,
+            fontFamily = fontLabel,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
@@ -312,14 +287,146 @@ private fun EditableField(
             value = text,
             onValueChange = onChange,
             textStyle = TextStyle(
-                fontFamily = font,
-                fontSize = 14.sp,
+                fontFamily = SourceSans3, // ✅ Pakai langsung
+                fontSize = 16.sp,
                 color = Color(0xFF444444)
             ),
             modifier = Modifier
                 .padding(vertical = 6.dp)
                 .fillMaxWidth()
         )
+
+        Divider(color = Color(0xFFE0E0E0))
+    }
+}
+
+// -----------------------------------------------------------------
+// 2. KOMPONEN SUFFIX (Untuk Age, Height, Weight) - "cm", "kg", "years"
+// -----------------------------------------------------------------
+@Composable
+private fun SuffixEditableField(
+    label: String,
+    text: String,
+    suffix: String,
+    onChange: (String) -> Unit
+) {
+    val fontLabel = FontFamily(Font(R.font.source_serif_pro_regular))
+
+    Column {
+        Text(
+            text = label,
+            color = Color(0xFF2E7D32),
+            fontFamily = fontLabel,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        // Wadah Row agar Text Field dan Suffix bersebelahan
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            // 1. Input Field: Hapus fillMaxWidth, ganti jadi wrapContentWidth
+            // Agar lebarnya hanya SELEBAR ANGKA yang diketik
+            BasicTextField(
+                value = text,
+                onValueChange = onChange,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = TextStyle(
+                    fontFamily = SourceSans3,
+                    fontSize = 16.sp,
+                    color = Color(0xFF444444)
+                ),
+                // ✅ PENTING: IntrinsicSize.Min atau wrapContent agar tidak serakah tempat
+                modifier = Modifier.width(IntrinsicSize.Min)
+            )
+
+            // 2. Suffix: Langsung di sebelahnya (1 spasi)
+            Text(
+                text = " $suffix", // Spasi manual di sini
+                style = TextStyle(
+                    fontFamily = SourceSans3,
+                    fontSize = 16.sp,
+                    color = Color(0xFF444444)
+                )
+            )
+        }
+
+        Divider(color = Color(0xFFE0E0E0))
+    }
+}
+
+// -----------------------------------------------------------------
+// 3. KOMPONEN GENDER (Dropdown: Male / Female)
+// -----------------------------------------------------------------
+@Composable
+private fun GenderDropdownField(
+    label: String,
+    selectedGender: String,
+    onGenderChange: (String) -> Unit
+) {
+    val fontLabel = FontFamily(Font(R.font.source_serif_pro_regular))
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Text(
+            text = label,
+            color = Color(0xFF2E7D32),
+            fontFamily = fontLabel,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
+                .clickable { expanded = true }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (selectedGender.isNotEmpty()) selectedGender else "Select Gender",
+                    style = TextStyle(
+                        fontFamily = SourceSans3, // ✅ Pakai langsung
+                        fontSize = 16.sp,
+                        color = Color(0xFF444444)
+                    )
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = Color(0xFF444444)
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Male", fontFamily = SourceSans3) }, // ✅ Pakai langsung
+                    onClick = {
+                        onGenderChange("MALE")
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Female", fontFamily = SourceSans3) }, // ✅ Pakai langsung
+                    onClick = {
+                        onGenderChange("FEMALE")
+                        expanded = false
+                    }
+                )
+            }
+        }
 
         Divider(color = Color(0xFFE0E0E0))
     }

@@ -5,6 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import android.net.Uri // Pastikan ini di-import
+import com.google.firebase.storage.FirebaseStorage // Import Storage
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.io.ByteArrayOutputStream
 
 class RegistrationViewModel : ViewModel() {
 
@@ -35,6 +41,11 @@ class RegistrationViewModel : ViewModel() {
     val likedFoods = mutableStateOf<Set<String>>(emptySet())
     val mainGoal = mutableStateOf<String?>(null)
 
+    // Instance untuk Storage
+    private val storage = FirebaseStorage.getInstance()
+
+    // State untuk menyimpan URL gambar dari Firestore
+    val profileImageUrl = mutableStateOf<String?>(null)
 
     // ------------------------------------------------------
     // ✅ Membuat akun + menyimpan profil USER pertama kali
@@ -102,6 +113,8 @@ class RegistrationViewModel : ViewModel() {
                     likedFoods.value = (snapshot.get("likedFoods") as? List<String>)?.toSet() ?: emptySet()
 
                     mainGoal.value = snapshot.getString("mainGoal")
+                    // ✅ Ambil URL gambar yang tersimpan
+                    profileImageUrl.value = snapshot.getString("profileImageUrl")
                 }
 
                 isLoading.value = false
@@ -120,6 +133,8 @@ class RegistrationViewModel : ViewModel() {
     // ✅ UPDATE profil dari ProfileScreen ke Firestore
     // ------------------------------------------------------
     fun updateUserProfile(
+        context: Context, // <--- TAMBAHAN BARU: Butuh Context untuk baca gambar
+        imageUri: Uri?,
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
@@ -128,6 +143,63 @@ class RegistrationViewModel : ViewModel() {
             return
         }
 
+        // Jika user memilih gambar baru
+        if (imageUri != null) {
+            val storageRef = storage.reference.child("profile_images/$uid")
+
+            try {
+                // === MULAI PROSES KOMPRESI ===
+
+                // 1. Baca gambar dari Uri menjadi Bitmap
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+
+                // 2. Siapkan wadah untuk hasil kompresi
+                val baos = ByteArrayOutputStream()
+
+                // 3. Kompres! Format JPEG, Kualitas 50% (Ini mengurangi ukuran drastis tapi tetap jelas di HP)
+                originalBitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+
+                // 4. Ubah menjadi kumpulan byte (ByteArray)
+                val data = baos.toByteArray()
+
+                // === SELESAI KOMPRESI ===
+
+                // 5. Upload menggunakan 'putBytes' (Bukan putFile lagi)
+                storageRef.putBytes(data)
+                    .addOnSuccessListener {
+                        // Jika sukses upload, ambil URL-nya
+                        storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                            val newImageUrl = downloadUri.toString()
+                            saveProfileDataToFirestore(uid, newImageUrl, onSuccess, onFailure)
+                        }.addOnFailureListener {
+                            onFailure("Gagal mendapatkan URL download.")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        onFailure("Upload gambar gagal: ${e.localizedMessage}")
+                    }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onFailure("Gagal memproses gambar: ${e.localizedMessage}")
+            }
+
+        } else {
+            // Jika tidak ada gambar baru, simpan data teks saja (pakai URL lama)
+            saveProfileDataToFirestore(uid, profileImageUrl.value, onSuccess, onFailure)
+        }
+    }
+
+    // ✅ TAMBAHKAN FUNGSI HELPER BARU INI
+    // Fungsi ini akan menyimpan data ke Firestore.
+    // Ini adalah isi dari `updateUserProfile` Anda yang lama, tapi dimodifikasi.
+    private fun saveProfileDataToFirestore(
+        uid: String,
+        imageUrl: String?, // URL gambar (bisa baru atau lama)
+        onSuccess: () -> Unit,
+        onFailure: (String) -> Unit
+    ) {
         val data = mapOf(
             "email" to email.value,
             "username" to username.value,
@@ -138,12 +210,17 @@ class RegistrationViewModel : ViewModel() {
             "allergies" to allergies.value.toList(),
             "diets" to diets.value.toList(),
             "likedFoods" to likedFoods.value.toList(),
-            "mainGoal" to mainGoal.value
+            "mainGoal" to mainGoal.value,
+            "profileImageUrl" to imageUrl // ✅ Simpan URL gambar di sini
         )
 
         db.collection("users").document(uid)
             .update(data)
-            .addOnSuccessListener { onSuccess() }
+            .addOnSuccessListener {
+                // ✅ Update state lokal setelah sukses
+                profileImageUrl.value = imageUrl
+                onSuccess()
+            }
             .addOnFailureListener { e ->
                 onFailure(e.localizedMessage ?: "Gagal update profil.")
             }
