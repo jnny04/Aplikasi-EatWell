@@ -124,6 +124,16 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.Scanner.route) {
             ScannerPage(navController)
         }
+
+        composable(Screen.Favorites.route) {
+            // Inisialisasi ViewModel khusus untuk halaman ini
+            val favVM: FavouriteViewModel = hiltViewModel()
+
+            FavouritePage(
+                navController = navController,
+                favVM = favVM
+            )
+        }
         // ---------------- PROFILE ----------------
         composable(Screen.Profile.route) {
 
