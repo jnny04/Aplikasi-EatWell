@@ -39,7 +39,10 @@ import com.example.recappage.ui.theme.SourceSerifPro
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HomeHorizontalCards(navController: NavHostController) {
+fun HomeHorizontalCards(
+    navController: NavHostController,
+    dailyGoal: Int // <--- DATA MASUK DARI SINI
+) {
 
     val pagerState = rememberPagerState(pageCount = { 3 })
 
@@ -66,8 +69,8 @@ fun HomeHorizontalCards(navController: NavHostController) {
             ) {
                 when (page) {
                     0 -> CaloriesCard(
-                        baseGoal = 0,
-                        savedRecipe = 0,
+                        baseGoal = dailyGoal, // ✅ GUNAKAN DATA YANG MASUK (JANGAN 0)
+                        savedRecipe = 0, // Nanti ini bisa dibikin dinamis juga
                         onClick = { navController.navigate("intake_detail") }
                     )
                     1 -> RecommendationCard(navController)

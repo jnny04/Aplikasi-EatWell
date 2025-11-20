@@ -43,6 +43,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel // Import viewModel()
+
 // -------------------------------------------------------------
 // MAIN HOMEPAGE
 // -------------------------------------------------------------
@@ -51,6 +54,20 @@ fun HomePage(navController: NavHostController) {
 
     val recViewModel: RecommendationViewModel = hiltViewModel()
     val randomFood by recViewModel.randomFood.collectAsState()
+
+    // 1. PANGGIL REGISTRATION VIEWMODEL (Untuk ambil data user)
+    val regViewModel: RegistrationViewModel = hiltViewModel()
+    // Atau pakai: val regViewModel: RegistrationViewModel = viewModel() jika pakai navigation compose standard
+
+    // 2. AMBIL DATA GOAL DARI STATE VIEWMODEL
+    // (State ini otomatis update kalau loadUserProfile sukses)
+    val userGoal = regViewModel.dailyCalorieGoal.intValue
+
+    // 3. LOAD DATA SAAT HOMEPAGE DIBUKA
+    LaunchedEffect(Unit) {
+        recViewModel.loadFoods()
+        regViewModel.loadUserProfile() // <--- Ambil data dari Firestore
+    }
 
     var showResult by remember { mutableStateOf(false) }
     var dietary by remember { mutableStateOf("vegan") }
@@ -89,7 +106,11 @@ fun HomePage(navController: NavHostController) {
                 Spacer(Modifier.height(16.dp))
                 TodayHeader(navController)
                 Spacer(Modifier.height(16.dp))
-                HomeHorizontalCards(navController)
+                // 4. KIRIM DATA 'userGoal' KE KARTU
+                HomeHorizontalCards(
+                    navController = navController,
+                    dailyGoal = userGoal // <--- Masukkan ke sini
+                )
                 Spacer(Modifier.height(24.dp))
 
                 SpinWheelSection(

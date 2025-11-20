@@ -11,6 +11,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import java.io.ByteArrayOutputStream
+import androidx.compose.runtime.mutableIntStateOf // ✅ Import ini
 
 class RegistrationViewModel : ViewModel() {
 
@@ -40,6 +41,9 @@ class RegistrationViewModel : ViewModel() {
     val diets = mutableStateOf<Set<String>>(emptySet())
     val likedFoods = mutableStateOf<Set<String>>(emptySet())
     val mainGoal = mutableStateOf<String?>(null)
+    // ✅ 1. TAMBAHAN STATE BARU: Untuk menampung angka goal
+    var dailyCalorieGoal = mutableIntStateOf(0)
+
 
     // Instance untuk Storage
     private val storage = FirebaseStorage.getInstance()
@@ -87,10 +91,7 @@ class RegistrationViewModel : ViewModel() {
     // ------------------------------------------------------
     // ✅ LOAD data dari Firestore -> masuk ke state ViewModel
     // ------------------------------------------------------
-    fun loadUserProfile(
-        onLoaded: () -> Unit = {},
-        onError: (String) -> Unit = {}
-    ) {
+    fun loadUserProfile(onLoaded: () -> Unit = {}, onError: (String) -> Unit = {}) {
         val uid = auth.currentUser?.uid ?: return
 
         isLoading.value = true
@@ -115,6 +116,9 @@ class RegistrationViewModel : ViewModel() {
                     mainGoal.value = snapshot.getString("mainGoal")
                     // ✅ Ambil URL gambar yang tersimpan
                     profileImageUrl.value = snapshot.getString("profileImageUrl")
+
+                    val savedGoal = snapshot.getLong("dailyCalorieGoal")?.toInt() ?: 0
+                    dailyCalorieGoal.intValue = savedGoal
                 }
 
                 isLoading.value = false
@@ -125,6 +129,25 @@ class RegistrationViewModel : ViewModel() {
                 loadError.value = e.localizedMessage ?: "Gagal memuat profil."
                 onError(loadError.value!!)
                 isLoading.value = false
+            }
+    }
+
+    // ✅ 3. FUNGSI BARU: Khusus untuk menyimpan hasil hitungan dari SetupScreen
+    fun saveCalculatedGoal(goal: Int) {
+        val uid = auth.currentUser?.uid ?: return
+
+        val data = mapOf(
+            "dailyCalorieGoal" to goal
+        )
+
+        // Gunakan set(..., SetOptions.merge()) atau update
+        db.collection("users").document(uid)
+            .update(data)
+            .addOnSuccessListener {
+                dailyCalorieGoal.intValue = goal // Update state lokal juga
+            }
+            .addOnFailureListener { e ->
+                println("Gagal simpan goal: ${e.message}")
             }
     }
 

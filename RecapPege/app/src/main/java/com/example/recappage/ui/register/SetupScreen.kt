@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +30,12 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
 
     val calculatedGoal = viewModel.calculateCalorieGoal()
     val dailyCalorieGoal = String.format("%,d", calculatedGoal)
+
+    // ✅ 2. TAMBAHAN BARU: Simpan otomatis saat layar muncul
+    LaunchedEffect(Unit) {
+        // Simpan angka hasil hitungan ke Firestore
+        viewModel.saveCalculatedGoal(calculatedGoal)
+    }
 
     Column(
         modifier = Modifier
