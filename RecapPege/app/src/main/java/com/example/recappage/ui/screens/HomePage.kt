@@ -45,6 +45,8 @@ import kotlinx.coroutines.launch
 
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel // Import viewModel()
+import com.example.recappage.ui.viewmodel.IntakeViewModel // ✅ Import IntakeViewModel
+import com.example.recappage.ui.viewmodel.FavouriteViewModel
 
 // -------------------------------------------------------------
 // MAIN HOMEPAGE
@@ -59,6 +61,12 @@ fun HomePage(navController: NavHostController) {
     val regViewModel: RegistrationViewModel = hiltViewModel()
     // Atau pakai: val regViewModel: RegistrationViewModel = viewModel() jika pakai navigation compose standard
 
+    val intakeViewModel: IntakeViewModel = hiltViewModel()
+    val favViewModel: FavouriteViewModel = hiltViewModel()
+    // Asumsi: favViewModel.favourites adalah list yang bisa langsung diakses ukurannya
+    val savedCount = favViewModel.favourites.size
+
+    val consumedCalories by intakeViewModel.totalCaloriesToday.collectAsState()
     // 2. AMBIL DATA GOAL DARI STATE VIEWMODEL
     // (State ini otomatis update kalau loadUserProfile sukses)
     val userGoal = regViewModel.dailyCalorieGoal.intValue
@@ -109,7 +117,9 @@ fun HomePage(navController: NavHostController) {
                 // 4. KIRIM DATA 'userGoal' KE KARTU
                 HomeHorizontalCards(
                     navController = navController,
-                    dailyGoal = userGoal // <--- Masukkan ke sini
+                    dailyGoal = userGoal,
+                    consumed = consumedCalories,
+                    savedCount = savedCount // <--- KIRIM KE KARTU
                 )
                 Spacer(Modifier.height(24.dp))
 

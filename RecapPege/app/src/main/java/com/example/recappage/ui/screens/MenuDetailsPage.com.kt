@@ -36,16 +36,15 @@ import com.example.recappage.ui.viewmodel.IntakeViewModel
 fun MenuDetailsPage(
     navController: NavHostController,
     foodId: Int,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    // ✅ Inject IntakeViewModel di sini
+    intakeViewModel: IntakeViewModel = hiltViewModel()
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
     // 🔥 Observasi detail resep + nutrisi
     val recipe = viewModel.recipeDetail.collectAsState().value
-    val nutrition = viewModel.nutritionDetail.collectAsState().value
     val macroData = viewModel.macroData.collectAsState().value
-    val intakeViewModel: IntakeViewModel = hiltViewModel()
-
 
     // 🔥 Load data ketika halaman dibuka
     LaunchedEffect(foodId) {
@@ -157,7 +156,7 @@ fun MenuDetailsPage(
                     fontSize = 16.sp,
                     fontFamily = SourceSerifPro,
                     fontWeight = FontWeight.Bold,
-                    color = GreenCheckColor,
+                    color = Color(0xFF5CA135), // GreenCheckColor
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
@@ -184,11 +183,17 @@ fun MenuDetailsPage(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // ✅ BUTTON ADD TO INTAKE
                 AddToIntakeButton(
                     onClick = {
                         val title = recipe?.title ?: "Unknown Food"
-                        val calories = macroData?.calories?.toIntOrNull() ?: 0
 
+                        // 🔥 AMBIL ANGKA KALORI DARI MACRO DATA (Hapus string "kcal" dsb)
+                        // Contoh: "560 kcal" -> diambil 560
+                        val rawCalories = macroData?.calories?.replace(Regex("[^0-9]"), "")
+                        val calories = rawCalories?.toIntOrNull() ?: 0
+
+                        // 🔥 SIMPAN KE INTAKE
                         intakeViewModel.addIntake(title, calories)
 
                         showDialog = true
@@ -239,7 +244,7 @@ fun MenuDetailsPage(
     }
 }
 
-// BUTTON
+// BUTTON ADD TO INTAKE
 @Composable
 fun AddToIntakeButton(
     onClick: () -> Unit,

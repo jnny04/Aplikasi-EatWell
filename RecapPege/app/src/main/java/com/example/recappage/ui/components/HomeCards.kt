@@ -31,6 +31,9 @@ import androidx.navigation.NavHostController
 import com.example.recappage.R
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.theme.SourceSerifPro
+import androidx.compose.foundation.Canvas // ✅ Tambahkan import ini
+import androidx.compose.ui.graphics.StrokeCap // ✅ Tambahkan import ini
+import androidx.compose.ui.graphics.drawscope.Stroke // ✅ Tambahkan import ini
 
 /**
  * =========================================================
@@ -41,7 +44,9 @@ import com.example.recappage.ui.theme.SourceSerifPro
 @Composable
 fun HomeHorizontalCards(
     navController: NavHostController,
-    dailyGoal: Int // <--- DATA MASUK DARI SINI
+    dailyGoal: Int,
+    consumed: Int,
+    savedCount: Int // <--- TAMBAHAN PARAMETER BARU
 ) {
 
     val pagerState = rememberPagerState(pageCount = { 3 })
@@ -69,8 +74,9 @@ fun HomeHorizontalCards(
             ) {
                 when (page) {
                     0 -> CaloriesCard(
-                        baseGoal = dailyGoal, // ✅ GUNAKAN DATA YANG MASUK (JANGAN 0)
-                        savedRecipe = 0, // Nanti ini bisa dibikin dinamis juga
+                        baseGoal = dailyGoal,
+                        consumed = consumed,
+                        savedRecipe = savedCount, // ✅ GUNAKAN DATA DARI PARAMETER
                         onClick = { navController.navigate("intake_detail") }
                     )
                     1 -> RecommendationCard(navController)
@@ -110,17 +116,22 @@ fun HomeHorizontalCards(
 @Composable
 fun CaloriesCard(
     baseGoal: Int,
+    consumed: Int,
     savedRecipe: Int,
     onClick: () -> Unit
 ) {
+    val remaining = (baseGoal - consumed).coerceAtLeast(0)
+    val progress = if (baseGoal > 0) consumed.toFloat() / baseGoal.toFloat() else 0f
+    val strokeThickness = 22f
+
     Box(
         modifier = Modifier
             .size(width = 320.dp, height = 240.dp)
             .shadow(
-                elevation = 8.dp,                       // 🔥 lebih tinggi
+                elevation = 8.dp,
                 shape = RoundedCornerShape(20.dp),
-                ambientColor = Color.Black.copy(alpha = 0.70f),  // 🔥 lebih gelap
-                spotColor = Color.Black.copy(alpha = 0.70f)       // 🔥 lebih pekat
+                ambientColor = Color.Black.copy(alpha = 0.70f),
+                spotColor = Color.Black.copy(alpha = 0.70f)
             )
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
@@ -128,193 +139,186 @@ fun CaloriesCard(
             .padding(20.dp)
     )
     {
-
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
 
-            // ===============================
-            // LEFT SIDE — CALORIES CIRCLE
-            // ===============================
+            // --- KIRI: LINGKARAN PROGRESS (TETAP) ---
             Column(horizontalAlignment = Alignment.Start) {
 
                 Text(
-                    "Calories",
+                    text = "Calories",
                     fontFamily = SourceSerifPro,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 24.sp
                 )
 
-                Spacer(Modifier.height(1.dp))
-
                 Text(
-                    "Tap to see intake details",
+                    text = "Tap to see intake details",
                     fontFamily = SourceSans3,
                     fontSize = 8.sp,
-                    color = Color(0xFF555555)
+                    color = Color(0xFF555555),
+                    modifier = Modifier.offset(y = (-8).dp)
                 )
 
                 Spacer(Modifier.height(12.dp))
 
                 Box(
-                    modifier = Modifier.size(138.dp),
+                    modifier = Modifier.size(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(138.dp)
-                            .drawBehind {
-                                drawCircle(
-                                    color = Color(0xFFEDEDED),
-                                    radius = size.minDimension / 2f
-                                )
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                valFormatted(baseGoal),
-                                fontSize = 20.sp,
-                                fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "Remaining",
-                                fontSize = 10.sp,
-                                fontFamily = SourceSans3
-                            )
-                        }
+                    Canvas(modifier = Modifier.size(120.dp)) {
+                        drawArc(
+                            color = Color(0xFFEDEDED),
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            style = Stroke(width = strokeThickness)
+                        )
+                        drawArc(
+                            color = Color(0xFFFC7100),
+                            startAngle = -90f,
+                            sweepAngle = 360f * progress,
+                            useCenter = false,
+                            style = Stroke(width = strokeThickness, cap = StrokeCap.Round)
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = valFormatted(remaining),
+                            fontSize = 26.sp,
+                            fontFamily = SourceSerifPro,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            modifier = Modifier.offset(y = 2.dp)
+                        )
+                        Text(
+                            text = "Remaining",
+                            fontSize = 12.sp,
+                            fontFamily = SourceSans3,
+                            color = Color.Gray,
+                            modifier = Modifier.offset(y = (-2).dp)
+                        )
                     }
                 }
             }
 
-            // ===============================
-            // RIGHT SIDE — BASE GOAL + SAVED
-            // ===============================
+            // --- KANAN: BASE GOAL & SAVED (POSISI DISESUAIKAN) ---
             Column(
-                modifier = Modifier.padding(top = 45.dp),  // naik dari 55dp → 45dp
-                verticalArrangement = Arrangement.spacedBy(14.dp) // lebih rapat dari 18dp
+                // 1. Mengurangi padding atas drastis agar naik ke atas
+                modifier = Modifier.padding(top = 30.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp) // Jarak antar elemen lebih rapat
             ) {
 
-                // =================================
-                // BASE GOAL (rapat versi final)
-                // =================================
+                // --- BASE GOAL ---
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Image(
                         painter = painterResource(id = R.drawable.base_goal),
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
 
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
 
-                    Column(
-                        verticalArrangement = Arrangement.Center
-                    ) {
-
+                    Column(verticalArrangement = Arrangement.Center) {
                         Text(
-                            "Base Goal",
-                            fontSize = 9.sp,
+                            text = "Base Goal",
+                            fontSize = 8.sp,
                             color = Color(0xFF555555),
                             fontFamily = SourceSans3
                         )
 
-                        Row(
-                            verticalAlignment = Alignment.Bottom
-                        ) {
+                        Row(modifier = Modifier.offset(y = (-6).dp)) { // Tarik teks angka naik sedikit
                             Text(
-                                valFormatted(baseGoal),
-                                fontSize = 14.sp,
+                                text = valFormatted(baseGoal),
+                                fontSize = 12.sp,
                                 fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.alignByBaseline()
                             )
-
-                            Spacer(Modifier.width(2.dp))
-
+                            Spacer(Modifier.width(4.dp))
                             Text(
-                                "Calories",
-                                fontSize = 10.sp,
+                                text = "Calories",
+                                fontSize = 8.sp,
                                 fontFamily = SourceSerifPro,
-                                modifier = Modifier.offset(y = (-1).dp)
+                                fontWeight = FontWeight.Normal,
+                                color = Color.Black,
+                                modifier = Modifier.alignByBaseline()
                             )
                         }
                     }
                 }
 
-                // =================================
-                // SAVED RECIPE (rapat versi final)
-                // =================================
+                // --- SAVED RECIPE (POSISI NAIK KARENA PADDING DIATAS) ---
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Image(
                         painter = painterResource(id = R.drawable.saved_recipe),
                         contentDescription = null,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
 
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
 
-                    Column(
-                        verticalArrangement = Arrangement.Center
-                    ) {
+                    Column(verticalArrangement = Arrangement.Center) {
                         Text(
-                            "Saved Recipe",
-                            fontSize = 9.sp,
+                            text = "Saved Recipe",
+                            fontSize = 8.sp,
                             color = Color(0xFF555555),
                             fontFamily = SourceSans3
                         )
 
-                        Row(
-                            verticalAlignment = Alignment.Bottom
-                        ) {
+                        Row(modifier = Modifier.offset(y = (-6).dp)) { // Tarik teks angka naik sedikit
                             Text(
-                                "$savedRecipe",
-                                fontSize = 14.sp,
+                                text = "$savedRecipe",
+                                fontSize = 12.sp,
                                 fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.alignByBaseline()
                             )
-
-                            Spacer(Modifier.width(2.dp))
-
+                            Spacer(Modifier.width(4.dp))
                             Text(
-                                "Recipes",
-                                fontSize = 10.sp,
+                                text = "Recipes",
+                                fontSize = 8.sp,
                                 fontFamily = SourceSerifPro,
-                                modifier = Modifier.offset(y = (-1).dp)
+                                fontWeight = FontWeight.Normal,
+                                color = Color.Black,
+                                modifier = Modifier.alignByBaseline()
                             )
                         }
                     }
                 }
 
-                // =================================
-                // BUTTON — LOG MANUALLY
-                // otomatis naik karena konten di atas lebih compact
-                // =================================
+                // Jarak sebelum tombol (Spacer)
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // --- BUTTON LOG MANUALLY (UKURAN DISESUAIKAN) ---
                 Box(
                     modifier = Modifier
-                        .size(width = 89.dp, height = 32.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .width(100.dp)  // Lebar diperbesar sesuai permintaan
+                        .height(40.dp)  // Tinggi disesuaikan
+                        .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFF5CA135)),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-
                         Image(
                             painter = painterResource(id = R.drawable.plus),
                             contentDescription = null,
                             modifier = Modifier.size(14.dp)
                         )
-
                         Spacer(Modifier.width(6.dp))
-
                         Text(
-                            "Log manually",
+                            text = "Log manually",
                             color = Color.White,
-                            fontSize = 10.sp,
-                            fontFamily = SourceSans3
+                            fontSize = 10.sp, // Font sedikit dibesarkan agar proporsional dengan tombol
+                            fontFamily = SourceSerifPro,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
