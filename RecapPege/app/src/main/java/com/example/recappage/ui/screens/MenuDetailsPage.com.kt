@@ -187,14 +187,20 @@ fun MenuDetailsPage(
                 AddToIntakeButton(
                     onClick = {
                         val title = recipe?.title ?: "Unknown Food"
+                        val imageLink = recipe?.image // ✅ Ambil Link Gambar dari API
 
-                        // 🔥 AMBIL ANGKA KALORI DARI MACRO DATA (Hapus string "kcal" dsb)
-                        // Contoh: "560 kcal" -> diambil 560
-                        val rawCalories = macroData?.calories?.replace(Regex("[^0-9]"), "")
-                        val calories = rawCalories?.toIntOrNull() ?: 0
+                        val carbs = macroData?.carbs?.replace(Regex("[^0-9]"), "")?.toIntOrNull() ?: 0
+                        val protein = macroData?.protein?.replace(Regex("[^0-9]"), "")?.toIntOrNull() ?: 0
+                        val fat = macroData?.fat?.replace(Regex("[^0-9]"), "")?.toIntOrNull() ?: 0
 
-                        // 🔥 SIMPAN KE INTAKE
-                        intakeViewModel.addIntake(title, calories)
+                        // ✅ Kirim imageLink ke ViewModel
+                        intakeViewModel.addEntry(
+                            name = title,
+                            carbs = carbs,
+                            protein = protein,
+                            fat = fat,
+                            imageUrl = imageLink
+                        )
 
                         showDialog = true
                     },

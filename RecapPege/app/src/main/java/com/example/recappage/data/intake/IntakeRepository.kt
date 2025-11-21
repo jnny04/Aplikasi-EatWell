@@ -6,7 +6,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,71 +15,90 @@ class IntakeRepository @Inject constructor() {
     private val _intakes = MutableStateFlow<List<IntakeEntry>>(emptyList())
     val intakes: StateFlow<List<IntakeEntry>> = _intakes.asStateFlow()
 
-    // Inisialisasi Firebase
+    // ✅ 1. TAMBAHKAN VARIABLE UNTUK TARGET KALORI (Default 2000 jika belum diset)
+    private val _dailyGoal = MutableStateFlow(2000)
+    val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
+
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // ✅ FUNGSI 1: SIMPAN KE FIREBASE
+    init {
+        // ✅ 2. PANGGIL FUNGSI LOAD DATA SAAT REPOSITORY DIBUAT
+        fetchUserData()
+    }
+
+    // Fungsi Simpan
     fun addIntake(entry: IntakeEntry) {
         val uid = auth.currentUser?.uid ?: return
-
-        // 1. Siapkan data untuk dikirim (Format Map)
-        // Kita ubah LocalDate jadi String ("2023-11-21") agar mudah disimpan
         val intakeMap = hashMapOf(
             "id" to entry.id,
             "name" to entry.name,
             "calories" to entry.calories,
-            "date" to entry.date.toString()
+            "date" to entry.date.toString(),
+            "imageUrl" to entry.imageUrl,
+            // ✅ SIMPAN MACROS KE FIREBASE
+            "carbs" to entry.carbs,
+            "protein" to entry.protein,
+            "fat" to entry.fat
         )
 
-        // 2. Simpan ke sub-collection "intakes"
         db.collection("users").document(uid)
             .collection("intakes")
-            .document(entry.id.toString()) // Gunakan ID unik sebagai nama dokumen
+            .document(entry.id.toString())
             .set(intakeMap)
             .addOnSuccessListener {
-                // Jika sukses simpan di cloud, update juga tampilan lokal
                 val currentList = _intakes.value
                 _intakes.value = currentList + entry
-                println("Sukses simpan ke Firestore: ${entry.name}")
-            }
-            .addOnFailureListener { e ->
-                println("Gagal simpan ke Firestore: ${e.message}")
             }
     }
 
-    // ✅ FUNGSI 2: AMBIL DATA DARI FIREBASE (LOAD)
-    // Dipanggil saat aplikasi baru dibuka
+    // Fungsi Load
     fun fetchTodayIntakes() {
         val uid = auth.currentUser?.uid ?: return
-        val todayStr = LocalDate.now().toString() // Contoh: "2023-11-21"
+        val todayStr = java.time.LocalDate.now().toString()
 
-        db.collection("users").document(uid)
-            .collection("intakes")
-            .whereEqualTo("date", todayStr) // Ambil CUMA yang tanggalnya hari ini
+        db.collection("users").document(uid).collection("intakes")
+            .whereEqualTo("date", todayStr)
             .get()
             .addOnSuccessListener { documents ->
                 val loadedList = mutableListOf<IntakeEntry>()
-
                 for (document in documents) {
-                    // Convert data Firestore kembali ke IntakeEntry
+                    // ... (ambil id, name, calories, dateStr, imageUrl tetap sama)
                     val id = document.getLong("id") ?: 0L
                     val name = document.getString("name") ?: "Unknown"
                     val calories = document.getLong("calories")?.toInt() ?: 0
                     val dateStr = document.getString("date") ?: todayStr
+                    val imageUrl = document.getString("imageUrl")
+                    val date = java.time.LocalDate.parse(dateStr)
 
-                    // Convert String balik ke LocalDate
-                    val date = LocalDate.parse(dateStr)
+                    // ✅ AMBIL DATA MACROS (Default 0 jika data lama belum punya)
+                    val carbs = document.getLong("carbs")?.toInt() ?: 0
+                    val protein = document.getLong("protein")?.toInt() ?: 0
+                    val fat = document.getLong("fat")?.toInt() ?: 0
 
-                    loadedList.add(IntakeEntry(id, name, calories, date))
+                    loadedList.add(IntakeEntry(id, name, calories, date, imageUrl, carbs, protein, fat))
                 }
-
-                // Update StateFlow agar UI berubah
                 _intakes.value = loadedList
-                println("Sukses load ${loadedList.size} data dari Firestore")
             }
-            .addOnFailureListener { e ->
-                println("Gagal load data: ${e.message}")
+    }
+
+    // ✅ 3. TAMBAHKAN FUNGSI INI UNTUK AMBIL DATA USER
+    private fun fetchUserData() {
+        val uid = auth.currentUser?.uid ?: return
+
+        // Mengambil data dari dokumen user
+        db.collection("users").document(uid)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+
+                if (snapshot != null && snapshot.exists()) {
+                    // Pastikan nama field di Firestore kamu adalah "calorieTarget" atau "bmr"
+                    // Sesuaikan string "calorieTarget" dengan nama field di database kamu!
+                    val target = snapshot.getLong("dailyCalorieGoal")?.toInt()
+                        ?: 2000 // Default jika masih kosong
+
+                    _dailyGoal.value = target
+                }
             }
     }
 }

@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.recappage.ui.navigation.AppNavigation
 import dagger.hilt.android.AndroidEntryPoint
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
