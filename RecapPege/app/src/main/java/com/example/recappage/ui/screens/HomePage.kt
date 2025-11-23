@@ -71,6 +71,16 @@ fun HomePage(navController: NavHostController) {
     // (State ini otomatis update kalau loadUserProfile sukses)
     val userGoal = regViewModel.dailyCalorieGoal.intValue
 
+    // ✅ AMBIL DATA MACROS (CONSUMED)
+    val cCarbs by intakeViewModel.totalCarbsToday.collectAsState()
+    val cProtein by intakeViewModel.totalProteinToday.collectAsState()
+    val cFat by intakeViewModel.totalFatToday.collectAsState()
+
+    // ✅ AMBIL DATA MACROS (TARGET)
+    val tCarbs by intakeViewModel.targetCarbs.collectAsState()
+    val tProtein by intakeViewModel.targetProtein.collectAsState()
+    val tFat by intakeViewModel.targetFat.collectAsState()
+
     // 3. LOAD DATA SAAT HOMEPAGE DIBUKA
     LaunchedEffect(Unit) {
         recViewModel.loadFoods()
@@ -119,7 +129,11 @@ fun HomePage(navController: NavHostController) {
                     navController = navController,
                     dailyGoal = userGoal,
                     consumed = consumedCalories,
-                    savedCount = savedCount // <--- KIRIM KE KARTU
+                    savedCount = savedCount,
+                    // ✅ PASSING DATA MACROS
+                    consumedCarbs = cCarbs, targetCarbs = tCarbs,
+                    consumedProtein = cProtein, targetProtein = tProtein,
+                    consumedFat = cFat, targetFat = tFat
                 )
                 Spacer(Modifier.height(24.dp))
 

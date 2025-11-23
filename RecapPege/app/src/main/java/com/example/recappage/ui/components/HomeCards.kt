@@ -2,10 +2,10 @@ package com.example.recappage.ui.components.home
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -17,27 +17,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.example.recappage.R
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.theme.SourceSerifPro
-import androidx.compose.foundation.Canvas // ✅ Tambahkan import ini
-import androidx.compose.ui.graphics.StrokeCap // ✅ Tambahkan import ini
-import androidx.compose.ui.graphics.drawscope.Stroke // ✅ Tambahkan import ini
 
 /**
  * =========================================================
- *  MAIN WRAPPER — HOME HORIZONTAL CARDS (3 Cards Pager)
+ * MAIN WRAPPER — HOME HORIZONTAL CARDS (3 Cards Pager)
  * =========================================================
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -46,7 +46,11 @@ fun HomeHorizontalCards(
     navController: NavHostController,
     dailyGoal: Int,
     consumed: Int,
-    savedCount: Int // <--- TAMBAHAN PARAMETER BARU
+    savedCount: Int,
+    // ✅ TAMBAHAN PARAMETER MACROS
+    consumedCarbs: Int, targetCarbs: Int,
+    consumedProtein: Int, targetProtein: Int,
+    consumedFat: Int, targetFat: Int
 ) {
 
     val pagerState = rememberPagerState(pageCount = { 3 })
@@ -76,11 +80,16 @@ fun HomeHorizontalCards(
                     0 -> CaloriesCard(
                         baseGoal = dailyGoal,
                         consumed = consumed,
-                        savedRecipe = savedCount, // ✅ GUNAKAN DATA DARI PARAMETER
+                        savedRecipe = savedCount,
                         onClick = { navController.navigate("intake_detail") }
                     )
                     1 -> RecommendationCard(navController)
-                    2 -> MacrosCard(carbs = 50, protein = 80, fat = 100)
+                    2 -> MacrosCard(
+                        // ✅ KIRIM DATA MACROS KE CARD
+                        cCarbs = consumedCarbs, tCarbs = targetCarbs,
+                        cProtein = consumedProtein, tProtein = targetProtein,
+                        cFat = consumedFat, tFat = targetFat
+                    )
                 }
             }
         }
@@ -110,7 +119,7 @@ fun HomeHorizontalCards(
 
 /**
  * =========================================================
- *  CARD 1 — CALORIES CARD
+ * CARD 1 — CALORIES CARD
  * =========================================================
  */
 @Composable
@@ -127,12 +136,7 @@ fun CaloriesCard(
     Box(
         modifier = Modifier
             .size(width = 320.dp, height = 240.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(20.dp),
-                ambientColor = Color.Black.copy(alpha = 0.70f),
-                spotColor = Color.Black.copy(alpha = 0.70f)
-            )
+            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(0.7f), spotColor = Color.Black.copy(0.7f))
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
             .clickable { onClick() }
@@ -144,182 +148,54 @@ fun CaloriesCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-
-            // --- KIRI: LINGKARAN PROGRESS (TETAP) ---
+            // --- KIRI: LINGKARAN PROGRESS ---
             Column(horizontalAlignment = Alignment.Start) {
-
-                Text(
-                    text = "Calories",
-                    fontFamily = SourceSerifPro,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 24.sp
-                )
-
-                Text(
-                    text = "Tap to see intake details",
-                    fontFamily = SourceSans3,
-                    fontSize = 8.sp,
-                    color = Color(0xFF555555),
-                    modifier = Modifier.offset(y = (-8).dp)
-                )
-
+                Text("Calories", fontFamily = SourceSerifPro, fontSize = 24.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp)
+                Text("Tap to see intake details", fontFamily = SourceSans3, fontSize = 8.sp, color = Color(0xFF555555), modifier = Modifier.offset(y = (-8).dp))
                 Spacer(Modifier.height(12.dp))
-
-                Box(
-                    modifier = Modifier.size(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center) {
                     Canvas(modifier = Modifier.size(120.dp)) {
-                        drawArc(
-                            color = Color(0xFFEDEDED),
-                            startAngle = 0f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            style = Stroke(width = strokeThickness)
-                        )
-                        drawArc(
-                            color = Color(0xFFFC7100),
-                            startAngle = -90f,
-                            sweepAngle = 360f * progress,
-                            useCenter = false,
-                            style = Stroke(width = strokeThickness, cap = StrokeCap.Round)
-                        )
+                        drawArc(color = Color(0xFFEDEDED), startAngle = 0f, sweepAngle = 360f, useCenter = false, style = Stroke(width = strokeThickness))
+                        drawArc(color = Color(0xFFFC7100), startAngle = -90f, sweepAngle = 360f * progress, useCenter = false, style = Stroke(width = strokeThickness, cap = StrokeCap.Round))
                     }
-
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = valFormatted(remaining),
-                            fontSize = 26.sp,
-                            fontFamily = SourceSerifPro,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.offset(y = 2.dp)
-                        )
-                        Text(
-                            text = "Remaining",
-                            fontSize = 12.sp,
-                            fontFamily = SourceSans3,
-                            color = Color.Gray,
-                            modifier = Modifier.offset(y = (-2).dp)
-                        )
+                        Text(text = valFormatted(remaining), fontSize = 26.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.offset(y = 2.dp))
+                        Text(text = "Remaining", fontSize = 12.sp, fontFamily = SourceSans3, color = Color.Gray, modifier = Modifier.offset(y = (-2).dp))
                     }
                 }
             }
-
-            // --- KANAN: BASE GOAL & SAVED (POSISI DISESUAIKAN) ---
-            Column(
-                // 1. Mengurangi padding atas drastis agar naik ke atas
-                modifier = Modifier.padding(top = 30.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp) // Jarak antar elemen lebih rapat
-            ) {
-
-                // --- BASE GOAL ---
+            // --- KANAN: BASE GOAL & SAVED ---
+            Column(modifier = Modifier.padding(top = 30.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(id = R.drawable.base_goal),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-
+                    Image(painter = painterResource(id = R.drawable.base_goal), contentDescription = null, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
-
                     Column(verticalArrangement = Arrangement.Center) {
-                        Text(
-                            text = "Base Goal",
-                            fontSize = 8.sp,
-                            color = Color(0xFF555555),
-                            fontFamily = SourceSans3
-                        )
-
-                        Row(modifier = Modifier.offset(y = (-6).dp)) { // Tarik teks angka naik sedikit
-                            Text(
-                                text = valFormatted(baseGoal),
-                                fontSize = 12.sp,
-                                fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black,
-                                modifier = Modifier.alignByBaseline()
-                            )
+                        Text("Base Goal", fontSize = 8.sp, color = Color(0xFF555555), fontFamily = SourceSans3)
+                        Row(modifier = Modifier.offset(y = (-6).dp)) {
+                            Text(text = valFormatted(baseGoal), fontSize = 12.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = Color.Black)
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Calories",
-                                fontSize = 8.sp,
-                                fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Normal,
-                                color = Color.Black,
-                                modifier = Modifier.alignByBaseline()
-                            )
+                            Text("Calories", fontSize = 8.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Normal, color = Color.Black)
                         }
                     }
                 }
-
-                // --- SAVED RECIPE (POSISI NAIK KARENA PADDING DIATAS) ---
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(id = R.drawable.saved_recipe),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-
+                    Image(painter = painterResource(id = R.drawable.saved_recipe), contentDescription = null, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
-
                     Column(verticalArrangement = Arrangement.Center) {
-                        Text(
-                            text = "Saved Recipe",
-                            fontSize = 8.sp,
-                            color = Color(0xFF555555),
-                            fontFamily = SourceSans3
-                        )
-
-                        Row(modifier = Modifier.offset(y = (-6).dp)) { // Tarik teks angka naik sedikit
-                            Text(
-                                text = "$savedRecipe",
-                                fontSize = 12.sp,
-                                fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black,
-                                modifier = Modifier.alignByBaseline()
-                            )
+                        Text("Saved Recipe", fontSize = 8.sp, color = Color(0xFF555555), fontFamily = SourceSans3)
+                        Row(modifier = Modifier.offset(y = (-6).dp)) {
+                            Text("$savedRecipe", fontSize = 12.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = Color.Black)
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Recipes",
-                                fontSize = 8.sp,
-                                fontFamily = SourceSerifPro,
-                                fontWeight = FontWeight.Normal,
-                                color = Color.Black,
-                                modifier = Modifier.alignByBaseline()
-                            )
+                            Text("Recipes", fontSize = 8.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Normal, color = Color.Black)
                         }
                     }
                 }
-
-                // Jarak sebelum tombol (Spacer)
                 Spacer(modifier = Modifier.height(2.dp))
-
-                // --- BUTTON LOG MANUALLY (UKURAN DISESUAIKAN) ---
-                Box(
-                    modifier = Modifier
-                        .width(100.dp)  // Lebar diperbesar sesuai permintaan
-                        .height(40.dp)  // Tinggi disesuaikan
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF5CA135)),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.width(100.dp).height(40.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFF5CA135)), contentAlignment = Alignment.Center) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(id = R.drawable.plus),
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
+                        Image(painter = painterResource(id = R.drawable.plus), contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(
-                            text = "Log manually",
-                            color = Color.White,
-                            fontSize = 10.sp, // Font sedikit dibesarkan agar proporsional dengan tombol
-                            fontFamily = SourceSerifPro,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("Log manually", color = Color.White, fontSize = 10.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -327,84 +203,24 @@ fun CaloriesCard(
     }
 }
 
-
-private fun valFormatted(value: Int): String =
-    String.format("%,d", value).replace(",", ".")
+private fun valFormatted(value: Int): String = String.format("%,d", value).replace(",", ".")
 
 /**
  * =========================================================
- *  CARD 2 — RECOMMENDATION CARD
+ * CARD 2 — RECOMMENDATION CARD
  * =========================================================
  */
 @Composable
 fun RecommendationCard(navController: NavHostController) {
-    Box(
-        modifier = Modifier
-            .width(320.dp)
-            .height(240.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.Gray)
-    ) {
-
-        Image(
-            painter = painterResource(id = R.drawable.foodbox),
-            contentDescription = null,
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer {
-                    scaleX = 1.2f
-                    scaleY = 1.2f
-                },
-            contentScale = ContentScale.Crop
-        )
-
-        Column(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Text(
-                "So… what’s on your plate for today?",
-                color = Color.White,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                fontSize = 16.sp,
-                fontFamily = SourceSerifPro,
-                fontWeight = FontWeight.SemiBold
-            )
-
+    Box(modifier = Modifier.width(320.dp).height(240.dp).clip(RoundedCornerShape(10.dp)).background(Color.Gray)) {
+        Image(painter = painterResource(id = R.drawable.foodbox), contentDescription = null, modifier = Modifier.matchParentSize().graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }, contentScale = ContentScale.Crop)
+        Column(modifier = Modifier.matchParentSize().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("So… what’s on your plate for today?", color = Color.White, textAlign = TextAlign.Center, fontSize = 16.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
-
-            Text(
-                "Today's recommendation is here to spark your appetite and satisfy your cravings.",
-                color = Color.White,
-                fontSize = 12.sp,
-                fontFamily = SourceSerifPro,
-                fontStyle = FontStyle.Italic,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                lineHeight = 14.sp
-            )
-
+            Text("Today's recommendation is here to spark your appetite and satisfy your cravings.", color = Color.White, fontSize = 12.sp, fontFamily = SourceSerifPro, fontStyle = FontStyle.Italic, textAlign = TextAlign.Center, lineHeight = 14.sp)
             Spacer(Modifier.height(40.dp))
-
-            Box(
-                modifier = Modifier
-                    .width(78.dp)
-                    .height(30.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFFF7A00))
-                    .clickable { navController.navigate("foodLibrary/_") },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Explore",
-                    color = Color.White,
-                    fontFamily = SourceSerifPro,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Box(modifier = Modifier.width(78.dp).height(30.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFF7A00)).clickable { navController.navigate("foodLibrary/_") }, contentAlignment = Alignment.Center) {
+                Text("Explore", color = Color.White, fontFamily = SourceSerifPro, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -412,56 +228,158 @@ fun RecommendationCard(navController: NavHostController) {
 
 /**
  * =========================================================
- *  CARD 3 — MACROS CARD
+ * CARD 3 — MACROS CARD (UPDATED)
  * =========================================================
  */
 @Composable
-fun MacrosCard(carbs: Int, protein: Int, fat: Int) {
-    Column(
+fun MacrosCard(
+    cCarbs: Int, tCarbs: Int,
+    cProtein: Int, tProtein: Int,
+    cFat: Int, tFat: Int
+) {
+    Box(
         modifier = Modifier
-            .width(270.dp)
-            .height(160.dp)
+            .size(width = 320.dp, height = 240.dp) // ✅ Samakan ukuran dengan Calories Card
+            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(0.7f), spotColor = Color.Black.copy(0.7f))
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White)
-            .padding(16.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        Text(
-            "Macros",
-            fontFamily = SourceSerifPro,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // HEADER
+            Text(
+                text = "Macros",
+                fontFamily = SourceSerifPro,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
 
-        Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(24.dp))
 
-        MacroBar("Carbohydrates", carbs)
-        Spacer(Modifier.height(8.dp))
+            // ITEM 1: CARBOHYDRATES
+            MacroRowItem(
+                label = "Carbohydrates",
+                consumed = cCarbs,
+                target = tCarbs,
+                color = Color(0xFF69DBED),
+                iconRes = R.drawable.carbs
+            )
 
-        MacroBar("Protein", protein)
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(14.dp))
 
-        MacroBar("Fat", fat)
+            // ITEM 2: PROTEIN
+            MacroRowItem(
+                label = "Protein",
+                consumed = cProtein,
+                target = tProtein,
+                color = Color(0xFFF0DB54),
+                iconRes = R.drawable.protein
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            // ITEM 3: FAT
+            MacroRowItem(
+                label = "Fat",
+                consumed = cFat,
+                target = tFat,
+                color = Color(0xFF80EAC5),
+                iconRes = R.drawable.fat
+            )
+        }
     }
 }
 
 @Composable
-fun MacroBar(label: String, value: Int) {
-    Column {
-        Text(label, fontSize = 12.sp)
+fun MacroRowItem(
+    label: String,
+    consumed: Int,
+    target: Int,
+    color: Color,
+    iconRes: Int
+) {
+    // Hitung Persentase & Progress
+    val percentage = if (target > 0) ((consumed.toFloat() / target.toFloat()) * 100).toInt() else 0
+    val progress = if (target > 0) (consumed.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(50))
-                .background(Color.LightGray)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 1. ICON (Kiri)
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = label,
+            modifier = Modifier.size(32.dp),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(Modifier.width(12.dp))
+
+        // 2. KOLOM TENGAH (Label + Progress Bar)
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            // Label "Carbohydrates"
+            Text(
+                text = label,
+                fontFamily = SourceSans3,
+                fontSize = 8.sp,
+                color = Color(0xFF555555),
+                lineHeight = 8.sp,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+
+            // Progress Bar (Tanpa Teks di dalam)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(value / 100f)
-                    .height(6.dp)
+                    .fillMaxWidth()
+                    .height(8.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color(0xFF6FC9BA))
+                    .background(Color(0xFFEAEAEA))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(color)
+                )
+            }
+        }
+
+        Spacer(Modifier.width(8.dp)) // Jarak sedikit ke kolom kanan
+
+        // 3. KOLOM KANAN (Persen & Info)
+        Column(
+            horizontalAlignment = Alignment.End, // Rata Kanan
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.width(50.dp) // Lebar fix sedikit diperlebar agar teks muat
+        ) {
+            // Angka Persen
+            Text(
+                text = "$percentage %",
+                fontFamily = SourceSerifPro,
+                fontSize = 12.sp,
+                color = Color.Black,
+                textAlign = TextAlign.End,
+                lineHeight = 12.sp
+            )
+
+            // Info ".../... (g)" di bawahnya (Rapat)
+            Text(
+                text = "$consumed/$target (g)",
+                fontFamily = SourceSans3,
+                fontSize = 6.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color.Black,
+                textAlign = TextAlign.End,
+                lineHeight = 6.sp // Pastikan rapat ke atas
             )
         }
     }

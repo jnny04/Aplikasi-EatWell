@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,6 +31,7 @@ import com.example.recappage.R
 import com.example.recappage.model.FoodRecipes
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.theme.SourceSans3
+import com.example.recappage.ui.theme.SourceSerifPro // ✅ Pastikan import ini ada
 import com.example.recappage.ui.viewmodel.SearchViewModel
 import com.example.recappage.util.NetworkResult
 
@@ -41,6 +44,14 @@ fun PencarianScreen(
 
     val searchResult by viewModel.searchResult.observeAsState()
     val suggestions by viewModel.suggestions.observeAsState(emptyList())
+
+    // ✅ 1. OBSERVE DATA HISTORY
+    val historyList by viewModel.searchHistory.observeAsState(emptyList())
+
+    // ✅ 2. LOAD HISTORY SAAT LAYAR DIBUKA
+    LaunchedEffect(Unit) {
+        viewModel.loadSearchHistory()
+    }
 
     Column(
         modifier = Modifier
@@ -56,9 +67,8 @@ fun PencarianScreen(
                 .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Image(
-                painter = painterResource(id = R.drawable.kri),
+                painter = painterResource(id = R.drawable.kri), // Icon panah back
                 contentDescription = null,
                 modifier = Modifier
                     .size(22.dp)
@@ -83,13 +93,14 @@ fun PencarianScreen(
                     singleLine = true,
                     textStyle = TextStyle(
                         color = Color.Black,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontFamily = SourceSans3
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(
                         onSearch = {
                             if (query.isNotEmpty()) {
+                                viewModel.saveSearchHistory(query)
                                 navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
                         }
@@ -97,18 +108,21 @@ fun PencarianScreen(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .padding(start = 14.dp, end = 40.dp)
+                        .fillMaxWidth()
                 ) { innerTextField ->
-
-                    if (query.isEmpty()) {
-                        Text(
-                            "Got something on your mind?",
-                            fontSize = 8.sp,
-                            color = Color.Gray,
-                            fontFamily = SourceSans3
-                        )
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                        if (query.isEmpty()) {
+                            Text(
+                                text = "Got something on your mind?",
+                                fontSize = 10.sp,
+                                color = Color.Gray,
+                                fontFamily = SourceSans3,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        innerTextField()
                     }
-
-                    innerTextField()
                 }
 
                 Image(
@@ -120,6 +134,7 @@ fun PencarianScreen(
                         .size(16.dp)
                         .clickable {
                             if (query.isNotEmpty()) {
+                                viewModel.saveSearchHistory(query)
                                 navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
                         }
@@ -127,100 +142,143 @@ fun PencarianScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
+        /** ==========================================================
+         * LOGIKA TAMPILAN:
+         * 1. Jika Query KOSONG -> Tampilkan HISTORY
+         * 2. Jika Query ISI    -> Tampilkan SUGGESTION / RESULT
+         * =========================================================== **/
 
-        /** 🟠 REAL-TIME SUGGESTION LIST **/
-        if (query.isNotEmpty() && suggestions.isNotEmpty()) {
+        if (query.isEmpty()) {
 
+            // ✅ TAMPILAN HISTORY LIST (Sesuai Request)
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp) // Padding kiri kanan agak masuk
+                    .verticalScroll(rememberScrollState())
             ) {
-
-                Text(
-                    "Suggestions",
-                    fontSize = 10.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
-
-                suggestions.forEachIndexed { index, title ->
+                // Loop data history
+                historyList.forEach { historyItem ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 12.dp) // Jarak antar item
                             .clickable {
-                                navController.navigate(Screen.FoodLibrary.createRoute(title))
-                            }
+                                // Kalau history diklik, langsung cari lagi
+                                query = historyItem
+                                viewModel.saveSearchHistory(historyItem) // Update timestamp
+                                navController.navigate(Screen.FoodLibrary.createRoute(historyItem))
+                            },
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Icon History (Jam)
+                        Image(
+                            painter = painterResource(id = R.drawable.history), // ✅ Pastikan nama file history.png
+                            contentDescription = "History",
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Text History
                         Text(
-                            text = title,
-                            fontSize = 12.sp,
-                            fontFamily = SourceSans3
+                            text = historyItem,
+                            fontFamily = SourceSerifPro, // ✅ Font Source Serif Pro
+                            fontSize = 16.sp,            // ✅ Ukuran 16sp
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Black
                         )
                     }
-
-                    if (index != suggestions.lastIndex) {
-                        Divider(color = Color(0xFFE0E0E0))
-                    }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
             }
-        }
 
-        /** 🔵 SEARCH RESULTS **/
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
+        } else {
 
-            when (searchResult) {
+            // ✅ TAMPILAN SUGGESTIONS & SEARCH RESULT (Kode Lama)
 
-                is NetworkResult.Success -> {
-                    val data = (searchResult as NetworkResult.Success<FoodRecipes>).data
-                    val list = data?.recipes ?: emptyList()
-
-                    list.forEach { recipe ->
+            // 1. Suggestions
+            if (suggestions.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp) // Samakan padding dengan History
+                ) {
+                    // Loop data suggestions
+                    suggestions.forEach { title ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 10.dp)
                                 .clickable {
-                                    navController.navigate("menuDetails/${recipe.id}")
+                                    // Simpan ke history & cari
+                                    viewModel.saveSearchHistory(title)
+                                    navController.navigate(Screen.FoodLibrary.createRoute(title))
                                 }
+                                .padding(vertical = 12.dp), // Jarak antar item (atas-bawah)
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // ✅ ICON: searchsuggestion.png
+                            Image(
+                                painter = painterResource(id = R.drawable.searchsuggestion),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(16.dp)) // Jarak icon ke teks
+
+                            // ✅ TEXT: Sesuai format gambar (Serif)
                             Text(
-                                recipe.title,
-                                fontFamily = SourceSans3,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(vertical = 6.dp)
+                                text = title,
+                                fontFamily = SourceSerifPro, // Menggunakan font Serif
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.Black,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
+                    // Spacer bawah agar tidak mentok jika list panjang
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
+            }
 
-                is NetworkResult.Error -> {
-                    Text(
-                        "No results found.",
-                        color = Color.Red,
-                        fontSize = 12.sp
-                    )
+            // 2. Search Results
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                when (searchResult) {
+                    is NetworkResult.Success -> {
+                        val data = (searchResult as NetworkResult.Success<FoodRecipes>).data
+                        val list = data?.recipes ?: emptyList()
+                        list.forEach { recipe ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp)
+                                    .clickable { navController.navigate("menuDetails/${recipe.id}") }
+                            ) {
+                                Text(
+                                    recipe.title,
+                                    fontFamily = SourceSans3,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                    is NetworkResult.Error -> {
+                        Text("No results found.", color = Color.Red, fontSize = 12.sp)
+                    }
+                    is NetworkResult.Loading -> {
+                        Text("Searching...", color = Color.Gray, fontSize = 12.sp)
+                    }
+                    null -> {}
                 }
-
-                is NetworkResult.Loading -> {
-                    Text(
-                        "Searching...",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
-                }
-
-                null -> {}
             }
         }
     }
