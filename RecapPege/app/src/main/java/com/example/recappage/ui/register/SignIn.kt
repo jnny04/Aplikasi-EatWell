@@ -232,8 +232,7 @@ fun SignInScreen(navController: NavHostController) {
                             .align(Alignment.End)
                             .offset(y = (4).dp, x = (-5).dp)
                             .clickable {
-                                // TODO: Implementasi navigasi Forgot Password
-                            }
+                                navController.navigate(Screen.ForgotPass.route)                            }
                     )
                 }
 

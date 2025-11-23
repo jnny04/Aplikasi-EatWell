@@ -41,7 +41,7 @@ sealed class Screen(val route: String) {
     object SetupScreen : Screen("setup_screen_route")
     object Profile : Screen("profile")
     object PencarianScreen : Screen("pencarian")
-    object ForgotPassword : Screen("forgot_password_screen")
+    object ForgotPass : Screen("forgot_pass") // ✅ Pastikan baris ini ada
     object OrderPage : Screen("order_page")
 }
 
@@ -58,6 +58,9 @@ fun AppNavigation(navController: NavHostController) {
         // ---------------- AUTH ----------------
         composable(Screen.SignIn.route) {
             SignInScreen(navController)
+        }
+        composable(Screen.ForgotPass.route) {
+            ForgotPassScreen(navController)
         }
 
         composable(Screen.Register.route) {
