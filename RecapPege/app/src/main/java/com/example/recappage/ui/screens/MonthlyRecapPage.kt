@@ -4,17 +4,21 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -22,29 +26,32 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.LaunchedEffect
-import androidx.navigation.NavHostController
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
+import com.example.recappage.ui.viewmodel.MonthlyRecapViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun MonthlyRecapPage(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    onDownloadClick: (String) -> Unit = {}
+    viewModel: MonthlyRecapViewModel = hiltViewModel()
 ) {
     val serifFont = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
 
-    var expanded by remember { mutableStateOf(false) }
-    var selectedMonth by remember { mutableStateOf("September") }
+    // ✅ Ambil State dari ViewModel
+    val monthlyList by viewModel.monthlyIntakes.collectAsState()
+    val selectedMonth by viewModel.selectedMonth.collectAsState()
 
-    // State download
+    var expanded by remember { mutableStateOf(false) }
+
+    // State download (Simulasi)
     var isDownloading by remember { mutableStateOf(false) }
     var downloadComplete by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0) }
@@ -60,20 +67,19 @@ fun MonthlyRecapPage(
             .background(Color.White)
     ) {
         // === Konten utama ===
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Text(
                 text = "My Intake",
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = serifBold, // ✅ font serif bold
+                    fontFamily = serifBold,
                     color = Color.Black
                 ),
                 modifier = Modifier.padding(start = 16.dp, top = 118.dp)
             )
 
+            // Baris Dropdown & Download
             Row(
                 modifier = Modifier
                     .padding(start = 16.dp, end = 16.dp)
@@ -107,7 +113,8 @@ fun MonthlyRecapPage(
 
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color.White)
                     ) {
                         months.forEach { month ->
                             val isSelected = month == selectedMonth
@@ -124,7 +131,7 @@ fun MonthlyRecapPage(
                                     )
                                 },
                                 onClick = {
-                                    selectedMonth = month
+                                    viewModel.selectMonth(month)
                                     expanded = false
                                 },
                                 contentPadding = PaddingValues(0.dp),
@@ -151,160 +158,124 @@ fun MonthlyRecapPage(
                 }
             }
 
-            // Grid makanan
-            LazyColumn(
-                modifier = Modifier
-                    .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 90.dp)
-                    .fillMaxWidth()
-            ) {
-                items(4) { row ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        repeat(2) { col ->
-                            val index = row * 2 + col
+            // ✅ GRID MAKANAN (PERBAIKAN UTAMA DI SINI)
+            if (monthlyList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No data for this month.",
+                        color = Color.Gray,
+                        fontFamily = serifFont
+                    )
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 90.dp)
+                        .fillMaxWidth()
+                        .weight(1f) // Isi sisa ruang ke bawah
+                ) {
+                    // items sekarang merujuk ke fungsi ekstensi LazyGridScope
+                    items(monthlyList) { item ->
+                        // Card Item Makanan
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(182.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xffd9d9d9)), // Background abu
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            // Gambar Makanan (AsyncImage)
+                            if (item.imageUrl != null) {
+                                AsyncImage(
+                                    model = item.imageUrl,
+                                    contentDescription = item.name,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            // Nama Makanan (Overlay Putih di bawah)
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(182.dp)
-                                    .background(Color(0xffd9d9d9), RoundedCornerShape(8.dp)),
-                                contentAlignment = Alignment.BottomCenter
+                                    .fillMaxWidth()
+                                    .background(Color.White.copy(alpha = 0.8f))
+                                    .padding(8.dp)
                             ) {
                                 Text(
-                                    text = listOf(
-                                        "Caesar Salad",
-                                        "Thai Basil Chicken",
-                                        "Chocolate Mousse",
-                                        "Coconut Chia Pudding",
-                                        "Banana Smoothie",
-                                        "Coconut Chia Pudding",
-                                        "Cheese Cake",
-                                        "Donat JCO"
-                                    )[index],
-                                    fontSize = 16.sp,
+                                    text = item.name,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = serifFont, // ✅ font serif
+                                    fontFamily = serifFont,
                                     color = Color(0xff555555),
-                                    modifier = Modifier.padding(4.dp)
+                                    maxLines = 1
                                 )
                             }
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
                 }
             }
         }
 
-        // === Overlay gelap (nutup konten, tapi header & nav tetap terang) ===
+        // === Overlay gelap (saat dropdown terbuka) ===
         if (expanded) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .zIndex(1f) // ✅ di atas bottom nav
+                    .zIndex(1f)
                     .background(Color.Black.copy(alpha = 0.5f))
             )
         }
 
-        // === Header tetap terang ===
+        // === Header & Nav ===
         TopBorder(
             navController = navController,
-            modifier = Modifier.zIndex(2f) // ✅ header paling atas
+            modifier = Modifier.zIndex(2f)
         )
 
-        // === Bottom navigation tetap terang ===
         Component18(
-            modifier = Modifier.align(Alignment.BottomCenter)
-                .zIndex(0f),  // ✅ layer paling bawah ,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(0f),
             navController = navController
-
         )
 
-        // === Overlay download (proses) ===
-// === Popup Downloading ===
+        // === Popup Downloading (Biarkan sama) ===
         if (isDownloading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f)),
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .zIndex(3f), // Pastikan paling atas
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .width(260.dp)
-                        .wrapContentHeight()
-                ) {
-                    // gambar downloading
-                    Image(
-                        painter = painterResource(id = R.drawable.downloading),
-                        contentDescription = "Downloading",
-                        contentScale = ContentScale.FillWidth,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                    )
-
-                    // ✅ hanya 1 tombol X di pojok kanan atas
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(10.dp)
-                            .size(28.dp)
-                            .clickable { isDownloading = false },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.x),
-                            contentDescription = "Close",
-                            modifier = Modifier.size(16.dp)
-                        )
+                // ... (Isi Popup Downloading sama seperti sebelumnya) ...
+                Box(modifier = Modifier.width(260.dp).wrapContentHeight()) {
+                    Image(painter = painterResource(id = R.drawable.downloading), contentDescription = null, contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)))
+                    Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).size(28.dp).clickable { isDownloading = false }, contentAlignment = Alignment.Center) {
+                        Image(painter = painterResource(id = R.drawable.x), contentDescription = "Close", modifier = Modifier.size(16.dp))
                     }
-
-                    // progress circle + persen
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .offset(y = (-40).dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            progress = progress / 100f,
-                            strokeWidth = 6.dp,
-                            modifier = Modifier.size(100.dp),
-                            color = Color(0xff5ca135)
-                        )
-                        Text(
-                            text = "$progress%",
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = serifBold, // ✅ font serif bold
-                            fontSize = 18.sp,
-                            color = Color(0xff5ca135)
-                        )
+                    Box(modifier = Modifier.align(Alignment.Center).offset(y = (-40).dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(progress = progress / 100f, strokeWidth = 6.dp, modifier = Modifier.size(100.dp), color = Color(0xff5ca135))
+                        Text(text = "$progress%", fontWeight = FontWeight.Bold, fontFamily = serifBold, fontSize = 18.sp, color = Color(0xff5ca135))
                     }
-
-                    // Cancel di bawah
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 12.dp)
-                            .clickable { isDownloading = false }
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            color = Color.Red,
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = serifFont, // ✅ font serif
-                            fontSize = 9.sp
-                        )
+                    Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp).clickable { isDownloading = false }) {
+                        Text(text = "Cancel", color = Color.Red, fontWeight = FontWeight.Medium, fontFamily = serifFont, fontSize = 9.sp)
                     }
                 }
                 LaunchedEffect(Unit) {
                     progress = 0
-                    val step = 2        // naik berapa persen tiap iterasi
-                    val delayMs = 150L  // jeda antar iterasi (ms)
                     while (progress < 100 && isDownloading) {
-                        delay(delayMs)
-                        progress += step
+                        delay(150)
+                        progress += 2
                     }
                     if (progress >= 100 && isDownloading) {
                         isDownloading = false
@@ -313,45 +284,21 @@ fun MonthlyRecapPage(
                 }
             }
         }
-    }
 
-// === Popup Download Complete ===
-    if (downloadComplete) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f)),
-            contentAlignment = Alignment.Center
-        ) {
+        // === Popup Download Complete ===
+        if (downloadComplete) {
             Box(
                 modifier = Modifier
-                    .width(260.dp)
-                    .wrapContentHeight()
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .zIndex(3f),
+                contentAlignment = Alignment.Center
             ) {
-                // gambar saved (TIDAK clickable)
-                Image(
-                    painter = painterResource(id = R.drawable.img_saved),
-                    contentDescription = "Saved",
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                )
-
-                // ❌ tombol close di pojok kanan atas
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(10.dp)    // jarak dari tepi gambar
-                        .size(28.dp)       // area sentuh
-                        .clickable { downloadComplete = false },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.x),
-                        contentDescription = "Close",
-                        modifier = Modifier.size(16.dp)
-                    )
+                Box(modifier = Modifier.width(260.dp).wrapContentHeight()) {
+                    Image(painter = painterResource(id = R.drawable.img_saved), contentDescription = null, contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)))
+                    Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).size(28.dp).clickable { downloadComplete = false }, contentAlignment = Alignment.Center) {
+                        Image(painter = painterResource(id = R.drawable.x), contentDescription = "Close", modifier = Modifier.size(16.dp))
+                    }
                 }
             }
         }

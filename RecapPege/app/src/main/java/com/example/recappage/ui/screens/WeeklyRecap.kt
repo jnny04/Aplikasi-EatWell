@@ -8,11 +8,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +43,7 @@ import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.viewmodel.IntakeViewModel
+import androidx.compose.material3.HorizontalDivider // ✅ Pakai HorizontalDivider
 
 @Composable
 fun IntakeRecapPageWeekly(
@@ -50,11 +54,14 @@ fun IntakeRecapPageWeekly(
     val serifFont = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
 
-    // Ambil data dari ViewModel
-    val intakeList by viewModel.todayIntakes.collectAsState()
-    val totalCalories by viewModel.totalCaloriesToday.collectAsState()
+    // ✅ 1. AMBIL DATA DINAMIS DARI VIEWMODEL
+    val intakeList by viewModel.displayedIntakes.collectAsState() // Data List (sesuai filter)
+    val totalCalories by viewModel.totalCaloriesDisplayed.collectAsState() // Total Kalori (sesuai filter)
+    val targetCalories by viewModel.targetCaloriesDisplayed.collectAsState()
+    val currentMode by viewModel.filterMode.collectAsState() // "Today" atau "This Week"
 
-    val targetCalories by viewModel.userGoal.collectAsState()
+    // State untuk menu dropdown
+    var expanded by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -74,42 +81,96 @@ fun IntakeRecapPageWeekly(
         // More Button
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.TopStart).offset(x = 360.dp, y = 154.dp).requiredWidth(36.dp).clickable { navController.navigate(Screen.MonthlyRecap.route) }
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = 360.dp, y = 154.dp)
+                .requiredWidth(36.dp)
+                .clickable { navController.navigate(Screen.MonthlyRecap.route) }
         ) {
             Image(painter = painterResource(id = R.drawable.icroundreadmore), contentDescription = null, colorFilter = ColorFilter.tint(Color(0xff5ca135)), modifier = Modifier.requiredSize(36.dp))
             Text(text = "More", color = Color(0xff5ca135), textAlign = TextAlign.Center, fontSize = 8.sp, modifier = Modifier.offset(y = (-10).dp))
         }
 
-        // Info This Week
-        Image(painter = painterResource(id = R.drawable.iconamoonhistoryfill), contentDescription = null, colorFilter = ColorFilter.tint(Color.Black), modifier = Modifier.align(Alignment.TopStart).offset(x = 16.dp, y = 164.dp).requiredSize(20.dp))
-        Text(text = "This Week", color = Color.Black, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold), modifier = Modifier.align(Alignment.TopStart).offset(x = 41.dp, y = 165.dp))
+        // === 🔻 BAGIAN DROPDOWN FILTER (PENGGANTI TEKS STATIS) 🔻 ===
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = 16.dp, y = 164.dp)
+                .clickable { expanded = true } // Klik untuk buka menu
+        ) {
+            // Icon Jam (History)
+            Image(
+                painter = painterResource(id = R.drawable.iconamoonhistoryfill),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(Color.Black),
+                modifier = Modifier.requiredSize(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Teks Pilihan (Berubah: "Today" atau "This Week")
+            Text(
+                text = currentMode,
+                color = Color.Black,
+                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
+            )
+
+            // Icon Panah Bawah
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Select Period",
+                modifier = Modifier.size(24.dp),
+                tint = Color.Black
+            )
+
+            // Menu Pilihan Dropdown
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.background(Color.White)
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Today", fontFamily = serifFont) },
+                    onClick = {
+                        viewModel.setFilterMode("Today") // Ubah ke Harian
+                        expanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("This Week", fontFamily = serifFont) },
+                    onClick = {
+                        viewModel.setFilterMode("This Week") // Ubah ke Mingguan
+                        expanded = false
+                    }
+                )
+            }
+        }
 
         // Calories Taken Text
         Text(text = "Calories Taken", color = Color.Black, textAlign = TextAlign.Center, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold), modifier = Modifier.align(Alignment.TopStart).offset(x = 150.dp, y = 201.dp))
 
-        // === TOTAL CALORIES ===
-        // ✅ Menggunakan Row agar posisi dinamis (tidak tertumpuk)
+        // === TOTAL CALORIES DISPLAY ===
         Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .offset(x = 198.dp, y = 223.dp), // Posisi utama tetap
-            verticalAlignment = Alignment.Bottom // Ratakan teks di bagian bawah
+                .offset(x = 198.dp, y = 223.dp),
+            verticalAlignment = Alignment.Bottom
         ) {
-            // Angka Kalori yang sudah dimakan (Besar)
+            // Angka Kalori (Berubah dinamis sesuai filter)
             Text(
                 text = "$totalCalories",
                 color = Color(0xfffc7100),
                 style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
             )
 
-            Spacer(modifier = Modifier.width(2.dp)) // Beri jarak sedikit
+            Spacer(modifier = Modifier.width(2.dp))
 
-            // Target Kalori (Kecil)
+            // Target Kalori User
             Text(
                 text = "/$targetCalories calories",
                 color = Color(0xfffc7100),
                 style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = serifFont),
-                // Sedikit padding bawah agar sejajar manis dengan angka besar
                 modifier = Modifier.padding(bottom = 5.dp)
             )
         }
@@ -132,15 +193,21 @@ fun IntakeRecapPageWeekly(
         }
 
         // Divider vertikal
-        Divider(color = Color.Black.copy(alpha = 0.3f), modifier = Modifier.align(Alignment.TopStart).offset(x = 397.dp, y = 361.dp).requiredWidth(120.dp).rotate(-90f))
-
+        HorizontalDivider(
+            color = Color.Black.copy(alpha = 0.3f),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = 397.dp, y = 361.dp)
+                .requiredWidth(120.dp)
+                .rotate(-90f)
+        )
 
         // === LIST MAKANAN (SCROLLABLE) ===
-        // Menggunakan padding top agar tidak menutupi header
+        // Menampilkan list sesuai filter ("Today" atau "This Week")
         if (intakeList.isEmpty()) {
-            // Tampilan kosong (Default)
+            // Tampilan kosong
             Text(
-                text = "No intake logged yet.",
+                text = if (currentMode == "Today") "No intake logged today." else "No intake logged this week.",
                 modifier = Modifier.align(Alignment.Center).offset(y = 50.dp),
                 color = Color.Gray,
                 fontFamily = serifFont
@@ -153,8 +220,8 @@ fun IntakeRecapPageWeekly(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 380.dp, bottom = 100.dp) // ✅ Jarak aman dari header & bottom nav
-                    .align(Alignment.TopCenter) // ✅ Dimulai dari atas ke bawah (bukan menumpuk di bawah)
+                    .padding(top = 380.dp, bottom = 100.dp) // Jarak aman dari header
+                    .align(Alignment.TopCenter)
             ) {
                 items(intakeList) { entry ->
                     FoodCardItem(entry = entry, serifFont = serifFont, serifBold = serifBold)
@@ -182,7 +249,7 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
                 .height(130.dp)
                 .shadow(4.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF0F0F0)) // ✅ Background abu-abu jika tidak ada gambar
+                .background(Color(0xFFF0F0F0)) // Background abu jika tidak ada gambar
         ) {
             if (entry.imageUrl != null) {
                 AsyncImage(
@@ -190,11 +257,7 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
                     contentDescription = entry.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
-                    // ❌ Placeholder default dihapus agar bersih
                 )
-            } else {
-                // Jika manual log (tidak ada URL), biarkan kosong atau bisa kasih icon simple
-                // Disini dibiarkan box abu-abu polos sesuai request "kosong"
             }
         }
         Spacer(modifier = Modifier.height(8.dp))

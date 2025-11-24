@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,32 +54,44 @@ class IntakeRepository @Inject constructor() {
     }
 
     // Fungsi Load
-    fun fetchTodayIntakes() {
+    fun fetchWeeklyIntakes() {
         val uid = auth.currentUser?.uid ?: return
-        val todayStr = java.time.LocalDate.now().toString()
 
-        db.collection("users").document(uid).collection("intakes")
-            .whereEqualTo("date", todayStr)
+        val today = LocalDate.now()
+        // Hitung tanggal 6 hari yang lalu (total rentang 7 hari termasuk hari ini)
+        val startOfWeekStr = today.minusDays(6).toString()
+
+        db.collection("users").document(uid)
+            .collection("intakes")
+            .whereGreaterThanOrEqualTo("date", startOfWeekStr) // Filter: Tanggal >= 7 hari lalu
+            .orderBy("date") // Urutkan berdasarkan tanggal
             .get()
             .addOnSuccessListener { documents ->
                 val loadedList = mutableListOf<IntakeEntry>()
+
                 for (document in documents) {
-                    // ... (ambil id, name, calories, dateStr, imageUrl tetap sama)
+                    // Parse data Firestore ke Object IntakeEntry
                     val id = document.getLong("id") ?: 0L
                     val name = document.getString("name") ?: "Unknown"
                     val calories = document.getLong("calories")?.toInt() ?: 0
-                    val dateStr = document.getString("date") ?: todayStr
+                    val dateStr = document.getString("date") ?: LocalDate.now().toString()
                     val imageUrl = document.getString("imageUrl")
-                    val date = java.time.LocalDate.parse(dateStr)
 
-                    // ✅ AMBIL DATA MACROS (Default 0 jika data lama belum punya)
+                    // Ambil Macros
                     val carbs = document.getLong("carbs")?.toInt() ?: 0
                     val protein = document.getLong("protein")?.toInt() ?: 0
                     val fat = document.getLong("fat")?.toInt() ?: 0
 
+                    val date = LocalDate.parse(dateStr)
+
                     loadedList.add(IntakeEntry(id, name, calories, date, imageUrl, carbs, protein, fat))
                 }
+
+                // Simpan semua data seminggu ke variable lokal
                 _intakes.value = loadedList
+            }
+            .addOnFailureListener { e ->
+                println("Error fetching weekly intakes: ${e.message}")
             }
     }
 
@@ -99,6 +112,52 @@ class IntakeRepository @Inject constructor() {
 
                     _dailyGoal.value = target
                 }
+            }
+    }
+
+    // ... kode sebelumnya ...
+
+    // ✅ FUNGSI BARU: MENGAMBIL DATA PER BULAN
+    fun fetchMonthlyIntakes(year: Int, month: Int, callback: (List<IntakeEntry>) -> Unit) {
+        val uid = auth.currentUser?.uid ?: return
+
+        // Format tanggal awal dan akhir bulan (yyyy-MM-dd)
+        // Note: String format bulan harus 2 digit, misal "09" untuk September
+        val monthStr = month.toString().padStart(2, '0')
+
+        val startDate = "$year-$monthStr-01"
+        // Untuk simplifikasi, kita ambil sampai akhir bulan dengan trik ambil tanggal 1 bulan depannya (exclusive)
+        // atau kita ambil saja semua data yang stringnya diawali "$year-$monthStr" jika format konsisten
+        val nextMonth = if (month == 12) 1 else month + 1
+        val nextYear = if (month == 12) year + 1 else year
+        val nextMonthStr = nextMonth.toString().padStart(2, '0')
+        val endDate = "$nextYear-$nextMonthStr-01"
+
+        db.collection("users").document(uid)
+            .collection("intakes")
+            .whereGreaterThanOrEqualTo("date", startDate)
+            .whereLessThan("date", endDate)
+            .orderBy("date")
+            .get()
+            .addOnSuccessListener { documents ->
+                val loadedList = mutableListOf<IntakeEntry>()
+                for (document in documents) {
+                    val id = document.getLong("id") ?: 0L
+                    val name = document.getString("name") ?: "Unknown"
+                    val calories = document.getLong("calories")?.toInt() ?: 0
+                    val dateStr = document.getString("date") ?: LocalDate.now().toString()
+                    val imageUrl = document.getString("imageUrl")
+                    val carbs = document.getLong("carbs")?.toInt() ?: 0
+                    val protein = document.getLong("protein")?.toInt() ?: 0
+                    val fat = document.getLong("fat")?.toInt() ?: 0
+                    val date = LocalDate.parse(dateStr)
+
+                    loadedList.add(IntakeEntry(id, name, calories, date, imageUrl, carbs, protein, fat))
+                }
+                callback(loadedList) // Kembalikan data ke ViewModel
+            }
+            .addOnFailureListener {
+                callback(emptyList()) // Return kosong jika gagal
             }
     }
 }

@@ -14,67 +14,87 @@ class IntakeViewModel @Inject constructor(
     private val repository: IntakeRepository
 ) : ViewModel() {
 
+    // Data mentah dari Repository (Isinya data 1 minggu)
     val intakes = repository.intakes
-    // ✅ TAMBAHKAN INI: Ambil data goal dari repository
     val userGoal = repository.dailyGoal
-    // ✅ 1. HITUNG TARGET MACRO OTOMATIS (StateFlow)
-    // Rumus: Karbo 50%, Protein 20%, Lemak 30%
 
-    val targetCarbs: StateFlow<Int> = userGoal.map { goal ->
-        (goal * 0.50 / 4).toInt() // 1 gram karbo = 4 kalori
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    // 1. STATE PILIHAN FILTER (Untuk WeeklyRecap)
+    private val _filterMode = MutableStateFlow("Today")
+    val filterMode: StateFlow<String> = _filterMode.asStateFlow()
 
-    val targetProtein: StateFlow<Int> = userGoal.map { goal ->
-        (goal * 0.20 / 4).toInt() // 1 gram protein = 4 kalori
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    val targetFat: StateFlow<Int> = userGoal.map { goal ->
-        (goal * 0.30 / 9).toInt() // 1 gram lemak = 9 kalori
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    init {
-        repository.fetchTodayIntakes()
+    fun setFilterMode(mode: String) {
+        _filterMode.value = mode
     }
 
-    // Filter khusus hari ini
-    val todayIntakes: StateFlow<List<IntakeEntry>> =
-        intakes.map { list ->
+    init {
+        repository.fetchWeeklyIntakes()
+    }
+
+    // 2. DATA FILTERED (Untuk WeeklyRecap)
+    val displayedIntakes: StateFlow<List<IntakeEntry>> =
+        combine(intakes, filterMode) { list, mode ->
             val today = LocalDate.now()
-            list.filter { it.date == today }
+            if (mode == "Today") {
+                list.filter { it.date == today }
+            } else {
+                list
+            }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    // Hitung total kalori
-    val totalCaloriesToday: StateFlow<Int> =
-        todayIntakes.map { list ->
+    // 3. TOTAL KALORI FILTERED (Untuk WeeklyRecap: bisa harian/mingguan tergantung dropdown)
+    val totalCaloriesDisplayed: StateFlow<Int> =
+        displayedIntakes.map { list ->
             list.sumOf { it.calories }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    // ✅ 1. HITUNG TOTAL MACROS YANG SUDAH DIMAKAN
-    val totalCarbsToday: StateFlow<Int> = todayIntakes.map { list ->
-        list.sumOf { it.carbs }
+    // ✅ TAMBAHAN BARU: TARGET KALORI DINAMIS
+    // Jika mode "This Week", target dikali 7. Jika "Today", target harian biasa.
+    val targetCaloriesDisplayed: StateFlow<Int> =
+        combine(userGoal, filterMode) { goal, mode ->
+            if (mode == "This Week") {
+                goal * 7 // Target Mingguan
+            } else {
+                goal     // Target Harian
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    // ✅ 4. [PERBAIKAN] TOTAL KALORI KHUSUS HARI INI (Untuk HomePage & IntakeDetail)
+    // Ini wajib ada agar file lain tidak error
+    val totalCaloriesToday: StateFlow<Int> = intakes.map { list ->
+        val today = LocalDate.now()
+        list.filter { it.date == today }.sumOf { it.calories }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    val totalProteinToday: StateFlow<Int> = todayIntakes.map { list ->
-        list.sumOf { it.protein }
+    // ✅ 5. [PERBAIKAN] MACROS KHUSUS HARI INI (Untuk HomePage & IntakeDetail)
+    val totalCarbsToday: StateFlow<Int> = intakes.map { list ->
+        val today = LocalDate.now()
+        list.filter { it.date == today }.sumOf { it.carbs }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    val totalFatToday: StateFlow<Int> = todayIntakes.map { list ->
-        list.sumOf { it.fat }
+    val totalProteinToday: StateFlow<Int> = intakes.map { list ->
+        val today = LocalDate.now()
+        list.filter { it.date == today }.sumOf { it.protein }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    val totalFatToday: StateFlow<Int> = intakes.map { list ->
+        val today = LocalDate.now()
+        list.filter { it.date == today }.sumOf { it.fat }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
 
-    // Fungsi untuk UI: Terima input, hitung kalori, kirim ke Repo
-    // ✅ Update fungsi ini: Tambahkan parameter imageUrl
+    // Target Macros (Hitungan User)
+    val targetCarbs: StateFlow<Int> = userGoal.map { (it * 0.50 / 4).toInt() }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    val targetProtein: StateFlow<Int> = userGoal.map { (it * 0.20 / 4).toInt() }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    val targetFat: StateFlow<Int> = userGoal.map { (it * 0.30 / 9).toInt() }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
     fun addEntry(name: String, carbs: Int, protein: Int, fat: Int, imageUrl: String? = null) {
         val totalCals = (carbs * 4) + (protein * 4) + (fat * 9)
-
         val newEntry = IntakeEntry(
             id = System.currentTimeMillis(),
             name = if (name.isBlank()) "Unknown Food" else name,
             calories = totalCals,
             date = LocalDate.now(),
             imageUrl = imageUrl,
-            // ✅ Masukkan data macros ke sini
             carbs = carbs,
             protein = protein,
             fat = fat
