@@ -30,15 +30,17 @@ import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.MainViewModel
 import com.example.recappage.ui.viewmodel.IntakeViewModel
-
+// ✅ Tambahkan import RegistrationViewModel
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
 
 @Composable
 fun MenuDetailsPage(
     navController: NavHostController,
     foodId: Int,
     viewModel: MainViewModel = hiltViewModel(),
-    // ✅ Inject IntakeViewModel di sini
-    intakeViewModel: IntakeViewModel = hiltViewModel()
+    intakeViewModel: IntakeViewModel = hiltViewModel(),
+    // ✅ 1. Tambahkan Parameter RegistrationViewModel
+    regViewModel: RegistrationViewModel = hiltViewModel()
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -46,14 +48,25 @@ fun MenuDetailsPage(
     val recipe = viewModel.recipeDetail.collectAsState().value
     val macroData = viewModel.macroData.collectAsState().value
 
-    // 🔥 Load data ketika halaman dibuka
+    // ✅ 2. Load Profile Data & Ambil URL
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+    val profilePicUrl = regViewModel.profileImageUrl.value
+
+    // 🔥 Load data resep ketika halaman dibuka
     LaunchedEffect(foodId) {
         viewModel.loadRecipeDetail(foodId)
     }
 
     Scaffold(
         topBar = {
-            TopBorder(navController = navController, showProfile = true)
+            // ✅ 3. Teruskan URL ke TopBorder
+            TopBorder(
+                navController = navController,
+                showProfile = true,
+                photoUrl = profilePicUrl
+            )
         },
         bottomBar = {
             Component18(navController = navController)

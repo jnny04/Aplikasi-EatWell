@@ -52,7 +52,7 @@ fun AppNavigation(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.HomePage.route
+        startDestination = Screen.SignIn.route
     ) {
 
         // ---------------- AUTH ----------------
