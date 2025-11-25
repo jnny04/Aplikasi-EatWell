@@ -24,25 +24,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel // Pastikan import ini ada
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
-// Pastikan import ViewModel benar
 import com.example.recappage.ui.viewmodel.IntakeViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.recappage.ui.theme.SourceSans3
+// ✅ Tambahkan import RegistrationViewModel
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
 
 @Composable
 fun IntakeDetailPage(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    viewModel: IntakeViewModel = hiltViewModel()
-){
+    viewModel: IntakeViewModel = hiltViewModel(),
+    // ✅ 1. Tambahkan Parameter ViewModel
+    regViewModel: RegistrationViewModel = hiltViewModel()
+) {
     var showSuccess by remember { mutableStateOf(false) }
     val serifFont = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
+
+    // ✅ 2. Load Profile Data & Ambil URL
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+    val profilePicUrl = regViewModel.profileImageUrl.value
 
     // State Variables
     var menu by remember { mutableStateOf("") }
@@ -51,7 +60,6 @@ fun IntakeDetailPage(
     var fat by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
 
-    // ✅ 1. AMBIL DATA DARI VIEWMODEL
     val totalCaloriesToday by viewModel.totalCaloriesToday.collectAsState()
     val targetCalories by viewModel.userGoal.collectAsState()
 
@@ -59,7 +67,6 @@ fun IntakeDetailPage(
     val tProtein by viewModel.targetProtein.collectAsState()
     val tFat by viewModel.targetFat.collectAsState()
 
-    // ✅ AMBIL TOTAL YANG SUDAH DIMAKAN
     val eatenCarbs by viewModel.totalCarbsToday.collectAsState()
     val eatenProtein by viewModel.totalProteinToday.collectAsState()
     val eatenFat by viewModel.totalFatToday.collectAsState()
@@ -84,7 +91,7 @@ fun IntakeDetailPage(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // === HEADER TOTAL CALORIES (SUDAH DIPERBAIKI) ===
+            // === HEADER TOTAL CALORIES ===
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
@@ -92,12 +99,10 @@ fun IntakeDetailPage(
                 Text("Total Calories", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
                 Spacer(Modifier.height(1.dp))
 
-                // ✅ Gunakan ROW agar tidak tertumpuk
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // Angka Kalori Saat Ini
                     Text(
                         text = "$totalCaloriesToday",
                         color = Color(0xfffc7100),
@@ -108,9 +113,8 @@ fun IntakeDetailPage(
 
                     Spacer(modifier = Modifier.width(2.dp))
 
-                    // Angka Target User (Dinamis)
                     Text(
-                        text = "/$targetCalories calories", // ✅ Sesuai User Goal
+                        text = "/$targetCalories calories",
                         color = Color(0xfffc7100),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -124,11 +128,8 @@ fun IntakeDetailPage(
             Text("Details", fontSize = 10.sp, fontFamily = serifFont, color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(start = 4.dp))
             Spacer(modifier = Modifier.height(2.dp))
 
-            // === DETAILS MACRO (SUDAH DINAMIS) ===
-            // Note: Bagian kiri (0) masih 0 karena database belum simpan data macro per item
-            // Tapi bagian kanan (/250) sudah sesuai target user.
+            // === DETAILS MACRO ===
             Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
-                // Tampilkan: [Yang Dimakan] / [Target] (g)
                 MacroItem("Carbohydrates", "$eatenCarbs / $tCarbs (g)", R.drawable.carbs, Color(0xFF69DBED), serifBold)
                 MacroItem("Protein", "$eatenProtein / $tProtein (g)", R.drawable.protein, Color(0xFFF0DB54), serifBold)
                 MacroItem("Fat", "$eatenFat / $tFat (g)", R.drawable.fat, Color(0xFF80EAC5), serifBold)
@@ -177,18 +178,6 @@ fun IntakeDetailPage(
                 MacroInput("Fat", fat, { fat = it }, Color(0xFF80EAC5), serifFont)
             }
 
-//            Spacer(Modifier.height(16.dp))
-//            Text("Quantity", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = serifBold)
-//            Spacer(Modifier.height(8.dp))
-//
-//            // Quantity Input
-//            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth()) {
-//                Box(modifier = Modifier.width(80.dp).height(34.dp).border(1.5.dp, Color(0xFFBDBDBD), RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
-//                    BasicTextField(value = qty, onValueChange = { qty = it }, singleLine = true, textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, fontFamily = serifFont, color = Color.Black))
-//                }
-//                Spacer(Modifier.width(8.dp))
-//                Text("Serving(s)", fontSize = 10.sp, fontFamily = serifFont, color = Color.Gray)
-//            }
             Spacer(Modifier.height(30.dp))
 
             // === HITUNG KALORI OTOMATIS ===
@@ -201,7 +190,7 @@ fun IntakeDetailPage(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.Bottom // ✅ Tulisan "cal" turun ke bawah
+                verticalAlignment = Alignment.Bottom
             ) {
                 // Kotak Angka
                 Box(
@@ -225,19 +214,17 @@ fun IntakeDetailPage(
                 // Teks "cal"
                 Text(
                     text = "cal",
-                    fontSize = 12.sp,           // ✅ Ukuran 12
-                    fontWeight = FontWeight.Medium, // ✅ Medium
-                    fontFamily = SourceSans3,   // ✅ Source Sans 3
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = SourceSans3,
                     color = Color.Black,
-                    // Sedikit padding bawah agar sejajar manis dengan border kotak
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
 
-            // ✅ Jarak ke tombol Add didekatkan (tadinya 30.dp jadi 20.dp)
             Spacer(modifier = Modifier.height(20.dp))
 
-            // === TOMBOL ADD (LOGIC DIHUBUNGKAN KE VIEWMODEL) ===
+            // === TOMBOL ADD ===
             Image(
                 painter = painterResource(id = R.drawable.todays_intake),
                 contentDescription = "Add to today's intake",
@@ -247,23 +234,17 @@ fun IntakeDetailPage(
                     .padding(top = 8.dp)
                     .height(40.dp)
                     .clickable {
-                        // 1. Ambil data input
                         val cVal = carbs.toIntOrNull() ?: 0
                         val pVal = protein.toIntOrNull() ?: 0
                         val fVal = fat.toIntOrNull() ?: 0
 
-                        // 2. Cek validasi
                         if (menu.isNotEmpty() || (cVal + pVal + fVal) > 0) {
-
-                            // 3. PANGGIL VIEWMODEL (Bukan Repository langsung)
                             viewModel.addEntry(
                                 name = menu,
                                 carbs = cVal,
                                 protein = pVal,
                                 fat = fVal
                             )
-
-                            // 4. Reset UI
                             showSuccess = true
                             menu = ""
                             carbs = ""
@@ -275,7 +256,12 @@ fun IntakeDetailPage(
             )
         }
 
-        TopBorder(navController = navController)
+        // ✅ 3. Teruskan URL ke TopBorder
+        TopBorder(
+            navController = navController,
+            photoUrl = profilePicUrl
+        )
+
         Component18(modifier = Modifier.align(Alignment.BottomCenter), navController = navController)
 
         // Popup Success
@@ -291,9 +277,8 @@ fun IntakeDetailPage(
         }
     }
 }
-// (Function MacroInput & MacroItem biarkan sama)
 
-// (Helper functions MacroInput dan MacroItem tetap sama seperti sebelumnya)
+// (Helper functions MacroInput dan MacroItem tetap sama)
 @Composable
 fun MacroInput(label: String, value: String, onValueChange: (String) -> Unit, accent: Color, fontFamily: FontFamily) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(100.dp)) {

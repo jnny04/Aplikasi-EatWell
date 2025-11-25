@@ -30,24 +30,38 @@ import com.example.recappage.model.Recipe
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
+// ✅ Tambahkan import RegistrationViewModel
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
 
 @Composable
 fun FavouritePage(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    favVM: FavouriteViewModel
+    favVM: FavouriteViewModel,
+    // ✅ 1. Tambahkan Parameter ViewModel
+    regViewModel: RegistrationViewModel = hiltViewModel()
 ) {
     val serifBold = FontFamily.Serif
 
     // 🔥 REALTIME – favourites akan auto-update
     val favourites = favVM.favourites
 
+    // ✅ 2. Load Profile Data & Ambil URL
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+    val profilePicUrl = regViewModel.profileImageUrl.value
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        TopBorder(navController = navController)
+        // ✅ 3. Teruskan URL ke TopBorder
+        TopBorder(
+            navController = navController,
+            photoUrl = profilePicUrl
+        )
 
         Column(
             modifier = Modifier

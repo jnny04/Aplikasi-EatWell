@@ -17,6 +17,7 @@ interface FoodRecipesApi {
     suspend fun getRandomRecipes(
         @QueryMap queries: Map<String, String>
     ): Response<FoodRecipes>
+    
 
     @GET("recipes/{id}/information")
     suspend fun getRecipeInformation(

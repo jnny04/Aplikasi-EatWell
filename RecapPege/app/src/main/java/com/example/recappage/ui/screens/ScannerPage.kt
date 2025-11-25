@@ -18,20 +18,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
-
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun ScannerPage(navController: NavHostController) {
+fun ScannerPage(
+    navController: NavHostController,
+    // ✅ Tambahkan ViewModel untuk mengambil data profil
+    regViewModel: RegistrationViewModel = hiltViewModel()
+) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var bitmapPreview by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -39,6 +44,13 @@ fun ScannerPage(navController: NavHostController) {
 
     // Buat coroutine scope
     val scope = rememberCoroutineScope()
+
+    // ✅ Load data user profile saat halaman dibuka
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+    // ✅ Ambil URL foto profil dari state ViewModel
+    val profilePicUrl = regViewModel.profileImageUrl.value
 
     // Launcher kamera
     val launcher = rememberLauncherForActivityResult(
@@ -48,7 +60,7 @@ fun ScannerPage(navController: NavHostController) {
             isLoading = true
             bitmapPreview = bitmap
 
-            // Jalankan delay di coroutine, bukan LaunchedEffect
+            // Jalankan delay di coroutine (Simulasi scan)
             scope.launch {
                 delay(2000) // simulasi loading 2 detik
                 isLoading = false
@@ -69,7 +81,11 @@ fun ScannerPage(navController: NavHostController) {
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TopBorder(navController = navController)
+            // ✅ Update TopBorder dengan photoUrl
+            TopBorder(
+                navController = navController,
+                photoUrl = profilePicUrl
+            )
 
             // Header
             Image(
@@ -152,7 +168,7 @@ fun ScannerPage(navController: NavHostController) {
             }
         }
 
-// POPUP RESULT
+        // POPUP RESULT
         if (showResultPopup) {
             Box(
                 modifier = Modifier
@@ -268,7 +284,7 @@ fun ScannerPage(navController: NavHostController) {
                             contentDescription = "Add to today's intake",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(30.dp)   // ✅ lebih besar
+                                .height(30.dp)
                                 .clickable {
                                     // TODO: action add to intake
                                 }

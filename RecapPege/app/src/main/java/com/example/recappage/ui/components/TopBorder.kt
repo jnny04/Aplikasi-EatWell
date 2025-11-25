@@ -1,5 +1,7 @@
+// File: TopBorder.kt
 package com.example.recappage.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,18 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.BorderStroke
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage // ✅ Pastikan import ini ada
 import com.example.recappage.R
 import com.example.recappage.ui.navigation.Screen
 
-// ===========================================
-// FUNGSI DIPISAHKAN
-// ===========================================
-
-/**
- * Komponen yang menampilkan latar belakang Header (untitleddesign91).
- */
+// ... (HeaderBackground biarkan saja, tidak perlu diubah) ...
 @Composable
 fun HeaderBackground(modifier: Modifier = Modifier) {
     Image(
@@ -35,39 +31,53 @@ fun HeaderBackground(modifier: Modifier = Modifier) {
         contentDescription = "Header background",
         contentScale = ContentScale.Crop,
         modifier = modifier
-//            .align(Alignment.TopCenter)
             .fillMaxWidth()
             .requiredHeight(100.dp)
     )
 }
 
-/**
- * Komponen tombol Profile yang dapat diklik.
- */
+// ✅ PERBAIKAN DI SINI: ProfileButton menerima photoUrl
 @Composable
-fun ProfileButton(navController: NavHostController, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.profile),
-        contentDescription = "Profile",
-        modifier = modifier
-//            .align(Alignment.TopEnd)
-            .padding(8.dp)
-            .size(80.dp)
-            .clip(CircleShape)
-            .clickable {
-                navController.navigate(Screen.Profile.route)
-            }
-    )
+fun ProfileButton(
+    navController: NavHostController,
+    photoUrl: String? = null, // Parameter baru (opsional)
+    modifier: Modifier = Modifier
+) {
+    // Modifier umum untuk bentuk bulat dan klik
+    val commonModifier = modifier
+        .padding(8.dp)
+        .size(52.dp)
+        .clip(CircleShape)
+        .clickable {
+            navController.navigate(Screen.Profile.route)
+        }
+
+    if (photoUrl != null) {
+        // 🔥 JIKA ADA URL: Pakai AsyncImage (Load dari Firebase)
+        AsyncImage(
+            model = photoUrl,
+            contentDescription = "Profile",
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.profile), // Loading state
+            error = painterResource(id = R.drawable.profile),       // Error state
+            modifier = commonModifier
+        )
+    } else {
+        // 🔥 JIKA TIDAK ADA URL: Pakai Image Default
+        Image(
+            painter = painterResource(id = R.drawable.profile),
+            contentDescription = "Profile",
+            modifier = commonModifier
+        )
+    }
 }
 
-// ===========================================
-// TOPBORDER UTAMA (KOMBINASI)
-// ===========================================
-
+// ✅ PERBAIKAN DI SINI: TopBorder menerima photoUrl dan meneruskannya
 @Composable
 fun TopBorder(
     navController: NavHostController,
-    showProfile: Boolean = true, // ✅ Parameter kontrol
+    showProfile: Boolean = true,
+    photoUrl: String? = null, // Parameter baru (opsional)
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -75,7 +85,7 @@ fun TopBorder(
             .requiredWidth(412.dp)
             .requiredHeight(100.dp)
     ) {
-        // Kotak dasar (putih) dan bayangan (tidak dipisah)
+        // Kotak dasar (putih) dan bayangan
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -118,16 +128,18 @@ fun TopBorder(
             }
         }
 
-        // Panggil fungsi Header Background yang sudah dipisah
-        HeaderBackground(modifier = Modifier.align(Alignment.TopCenter)
-        )
+        // Header Background
+        HeaderBackground(modifier = Modifier.align(Alignment.TopCenter))
 
-        // Panggil fungsi Profile Button secara bersyarat
+        // 🔥 PERUBAHAN ADA DI SINI 🔥
         if (showProfile) {
             ProfileButton(
                 navController = navController,
-                // ✅ TAMBAHKAN KEMBALI align() DI SINI (di dalam scope Box)
-                modifier = Modifier.align(Alignment.TopEnd)
+                photoUrl = photoUrl,
+                modifier = Modifier
+                    .align(Alignment.TopEnd) // Posisi awal di pojok kanan atas
+                    // 👇 TAMBAHKAN BARIS INI UNTUK MENGGESER
+                    .padding(top = 20.dp, end = 20.dp)
             )
         }
     }

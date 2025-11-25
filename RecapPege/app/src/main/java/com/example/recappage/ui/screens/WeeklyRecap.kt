@@ -43,24 +43,32 @@ import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.viewmodel.IntakeViewModel
-import androidx.compose.material3.HorizontalDivider // ✅ Pakai HorizontalDivider
+// ✅ Tambahkan import RegistrationViewModel
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
+import androidx.compose.material3.HorizontalDivider
 
 @Composable
 fun IntakeRecapPageWeekly(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    viewModel: IntakeViewModel = hiltViewModel()
+    viewModel: IntakeViewModel = hiltViewModel(),
+    // ✅ 1. Tambahkan Parameter ViewModel
+    regViewModel: RegistrationViewModel = hiltViewModel()
 ) {
     val serifFont = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
 
-    // ✅ 1. AMBIL DATA DINAMIS DARI VIEWMODEL
-    val intakeList by viewModel.displayedIntakes.collectAsState() // Data List (sesuai filter)
-    val totalCalories by viewModel.totalCaloriesDisplayed.collectAsState() // Total Kalori (sesuai filter)
-    val targetCalories by viewModel.targetCaloriesDisplayed.collectAsState()
-    val currentMode by viewModel.filterMode.collectAsState() // "Today" atau "This Week"
+    // ✅ 2. Load Profile Data & Ambil URL
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+    val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // State untuk menu dropdown
+    val intakeList by viewModel.displayedIntakes.collectAsState()
+    val totalCalories by viewModel.totalCaloriesDisplayed.collectAsState()
+    val targetCalories by viewModel.targetCaloriesDisplayed.collectAsState()
+    val currentMode by viewModel.filterMode.collectAsState()
+
     var expanded by remember { mutableStateOf(false) }
 
     Box(
@@ -68,8 +76,12 @@ fun IntakeRecapPageWeekly(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // === HEADER (POSISI TETAP) ===
-        TopBorder(navController = navController)
+        // === HEADER ===
+        // ✅ 3. Teruskan URL ke TopBorder
+        TopBorder(
+            navController = navController,
+            photoUrl = profilePicUrl
+        )
 
         Text(
             text = "My Intake",
@@ -91,15 +103,14 @@ fun IntakeRecapPageWeekly(
             Text(text = "More", color = Color(0xff5ca135), textAlign = TextAlign.Center, fontSize = 8.sp, modifier = Modifier.offset(y = (-10).dp))
         }
 
-        // === 🔻 BAGIAN DROPDOWN FILTER (PENGGANTI TEKS STATIS) 🔻 ===
+        // === DROPDOWN FILTER ===
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset(x = 16.dp, y = 164.dp)
-                .clickable { expanded = true } // Klik untuk buka menu
+                .clickable { expanded = true }
         ) {
-            // Icon Jam (History)
             Image(
                 painter = painterResource(id = R.drawable.iconamoonhistoryfill),
                 contentDescription = null,
@@ -109,14 +120,12 @@ fun IntakeRecapPageWeekly(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Teks Pilihan (Berubah: "Today" atau "This Week")
             Text(
                 text = currentMode,
                 color = Color.Black,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
             )
 
-            // Icon Panah Bawah
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Select Period",
@@ -124,7 +133,6 @@ fun IntakeRecapPageWeekly(
                 tint = Color.Black
             )
 
-            // Menu Pilihan Dropdown
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
@@ -133,14 +141,14 @@ fun IntakeRecapPageWeekly(
                 DropdownMenuItem(
                     text = { Text("Today", fontFamily = serifFont) },
                     onClick = {
-                        viewModel.setFilterMode("Today") // Ubah ke Harian
+                        viewModel.setFilterMode("Today")
                         expanded = false
                     }
                 )
                 DropdownMenuItem(
                     text = { Text("This Week", fontFamily = serifFont) },
                     onClick = {
-                        viewModel.setFilterMode("This Week") // Ubah ke Mingguan
+                        viewModel.setFilterMode("This Week")
                         expanded = false
                     }
                 )
@@ -157,7 +165,6 @@ fun IntakeRecapPageWeekly(
                 .offset(x = 198.dp, y = 223.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            // Angka Kalori (Berubah dinamis sesuai filter)
             Text(
                 text = "$totalCalories",
                 color = Color(0xfffc7100),
@@ -166,7 +173,6 @@ fun IntakeRecapPageWeekly(
 
             Spacer(modifier = Modifier.width(2.dp))
 
-            // Target Kalori User
             Text(
                 text = "/$targetCalories calories",
                 color = Color(0xfffc7100),
@@ -202,10 +208,8 @@ fun IntakeRecapPageWeekly(
                 .rotate(-90f)
         )
 
-        // === LIST MAKANAN (SCROLLABLE) ===
-        // Menampilkan list sesuai filter ("Today" atau "This Week")
+        // === LIST MAKANAN ===
         if (intakeList.isEmpty()) {
-            // Tampilan kosong
             Text(
                 text = if (currentMode == "Today") "No intake logged today." else "No intake logged this week.",
                 modifier = Modifier.align(Alignment.Center).offset(y = 50.dp),
@@ -220,7 +224,7 @@ fun IntakeRecapPageWeekly(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 380.dp, bottom = 100.dp) // Jarak aman dari header
+                    .padding(top = 380.dp, bottom = 100.dp)
                     .align(Alignment.TopCenter)
             ) {
                 items(intakeList) { entry ->
@@ -242,14 +246,13 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
             .background(Color.Transparent)
             .clickable { }
     ) {
-        // Gambar Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(130.dp)
                 .shadow(4.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF0F0F0)) // Background abu jika tidak ada gambar
+                .background(Color(0xFFF0F0F0))
         ) {
             if (entry.imageUrl != null) {
                 AsyncImage(
@@ -262,7 +265,6 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Nama Makanan
         Text(
             text = entry.name,
             fontFamily = serifBold,
@@ -272,7 +274,6 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
             maxLines = 1
         )
 
-        // Kalori
         Text(
             text = "${entry.calories} Kcal",
             fontFamily = serifFont,

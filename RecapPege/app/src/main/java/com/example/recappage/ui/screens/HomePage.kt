@@ -47,6 +47,7 @@ import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel // Import viewModel()
 import com.example.recappage.ui.viewmodel.IntakeViewModel // ✅ Import IntakeViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
+import androidx.compose.runtime.getValue // Pastikan ini ada untuk 'by' delegate
 
 // -------------------------------------------------------------
 // MAIN HOMEPAGE
@@ -80,6 +81,8 @@ fun HomePage(navController: NavHostController) {
     val tCarbs by intakeViewModel.targetCarbs.collectAsState()
     val tProtein by intakeViewModel.targetProtein.collectAsState()
     val tFat by intakeViewModel.targetFat.collectAsState()
+
+    val profilePicUrl = regViewModel.profileImageUrl.value
 
     // 3. LOAD DATA SAAT HOMEPAGE DIBUKA
     LaunchedEffect(Unit) {
@@ -120,7 +123,12 @@ fun HomePage(navController: NavHostController) {
                     .verticalScroll(rememberScrollState())
             ) {
 
-                TopBorder(navController = navController)
+                // 2. MASUKKAN KE TOPBORDER
+                TopBorder(
+                    navController = navController,
+                    photoUrl = profilePicUrl // ✅ TAMBAHKAN INI
+                )
+
                 Spacer(Modifier.height(16.dp))
                 TodayHeader(navController)
                 Spacer(Modifier.height(16.dp))

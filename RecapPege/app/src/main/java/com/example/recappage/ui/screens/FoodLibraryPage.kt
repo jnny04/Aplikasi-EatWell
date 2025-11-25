@@ -35,13 +35,16 @@ import com.example.recappage.model.Recipe
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.FilterDialog
 import com.example.recappage.ui.components.TopBorder
-import com.example.recappage.ui.components.FoodPreviewPopup // ⬅ TAMBAHAN
+import com.example.recappage.ui.components.FoodPreviewPopup
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.MainViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
+// ✅ 1. TAMBAHKAN IMPORT INI
+import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
+import androidx.compose.runtime.getValue
 
 @Composable
 fun FoodLibraryPage(
@@ -51,6 +54,9 @@ fun FoodLibraryPage(
     viewModel: MainViewModel = hiltViewModel(),
     favVM: FavouriteViewModel
 ) {
+    // ✅ 2. INISIALISASI regViewModel DI SINI
+    val regViewModel: RegistrationViewModel = hiltViewModel()
+
     val detail by viewModel.recipeDetail.collectAsState()
     val macros by viewModel.macroData.collectAsState()
     val topCategories = listOf("All", "Breakfast", "Heavy Meal", "Snacks", "Dessert")
@@ -58,7 +64,6 @@ fun FoodLibraryPage(
     var showFilterPopup by remember { mutableStateOf(false) }
     var isSearchMode by remember { mutableStateOf(false) }
 
-    // ⬅ TAMBAHAN POPUP STATE
     var showPopup by remember { mutableStateOf(false) }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
 
@@ -69,6 +74,14 @@ fun FoodLibraryPage(
     }
 
     val recipesState by viewModel.recipesResponse.observeAsState()
+
+    // ✅ 3. LOAD DATA PROFILE (Agar tidak null saat diambil)
+    LaunchedEffect(Unit) {
+        regViewModel.loadUserProfile()
+    }
+
+    // Sekarang baris ini tidak akan error lagi
+    val profilePicUrl = regViewModel.profileImageUrl.value
 
     LaunchedEffect(decodedQuery) {
         selectedTop = "All"
@@ -87,7 +100,7 @@ fun FoodLibraryPage(
         topBar = {
             TopBorder(
                 navController = navController,
-                modifier = Modifier.zIndex(3f)
+                photoUrl = profilePicUrl // ✅ SUDAH BENAR
             )
         },
         bottomBar = {
@@ -97,7 +110,7 @@ fun FoodLibraryPage(
             )
         }
     ) { padding ->
-
+        // ... (Kode selanjutnya tetap sama, tidak perlu diubah) ...
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -171,7 +184,7 @@ fun FoodLibraryPage(
                                 favVM = favVM,
                                 onSelect = {
                                     selectedRecipe = recipe
-                                    viewModel.loadRecipeDetail(recipe.id)   // ⬅ TAMBAH INI!
+                                    viewModel.loadRecipeDetail(recipe.id)
                                     showPopup = true
                                 }
                             )
@@ -227,12 +240,11 @@ fun FoodLibraryPage(
                 }
             }
 
-            // ⬅ TAMBAHAN POPUP
             if (showPopup && selectedRecipe != null) {
                 FoodPreviewPopup(
                     image = selectedRecipe!!.image,
                     title = selectedRecipe!!.title,
-                    detail = detail,        // tetap dipakai
+                    detail = detail,
                     onClose = { showPopup = false },
                     onRecipeClick = {
                         showPopup = false
@@ -248,12 +260,13 @@ fun FoodLibraryPage(
     }
 }
 
+// ... (Sisa fungsi RecipeCard dan CategoryChip tetap sama)
 @Composable
 fun RecipeCard(
     recipe: Recipe,
     navController: NavHostController,
     favVM: FavouriteViewModel,
-    onSelect: () -> Unit   // ⬅ dipakai buat popup!
+    onSelect: () -> Unit
 ) {
     val isFav by remember {
         derivedStateOf { favVM.isFavorite(recipe) }
@@ -267,7 +280,6 @@ fun RecipeCard(
             .background(Color(0xFFF5F5F5))
     ) {
 
-        // ✨ GAMBAR — klik untuk buka popup
         AsyncImage(
             model = recipe.image,
             contentDescription = recipe.title,
@@ -277,11 +289,10 @@ fun RecipeCard(
                 .clip(RoundedCornerShape(12.dp))
                 .zIndex(1f)
                 .clickable {
-                    onSelect()   // ⬅ buka popup, bukan navigate
+                    onSelect()
                 }
         )
 
-        // ✨ IKON OJEK + FAVORITE
         Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -291,14 +302,12 @@ fun RecipeCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // Ojek Icon
             Image(
                 painter = painterResource(id = R.drawable.ojek),
                 contentDescription = null,
                 modifier = Modifier.size(22.dp)
             )
 
-            // Favorite Icon
             Image(
                 painter = painterResource(
                     id = if (isFav) R.drawable.new_love else R.drawable.heartmenudetails
@@ -312,7 +321,6 @@ fun RecipeCard(
             )
         }
 
-        // ✨ TITLE DI BAWAH
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -338,8 +346,6 @@ fun RecipeCard(
         println("CHECK FAV: recipe.id = ${recipe.id}, isFav = $isFav")
     }
 }
-
-
 
 @Composable
 fun CategoryChip(
