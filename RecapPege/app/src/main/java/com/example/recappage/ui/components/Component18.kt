@@ -105,7 +105,7 @@ fun Component18(
             Spacer(modifier = Modifier.weight(1f))
 
             // ---------- RIGHT GROUP ----------
-            Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(25.dp)) {
 
                 // FAVORITES
                 NavItem(
