@@ -261,6 +261,8 @@ fun TodayHeader(navController: NavHostController) {
 // -------------------------------------------------------------
 // SPIN WHEEL SECTION
 // -------------------------------------------------------------
+// File: HomePage.kt
+
 @Composable
 fun SpinWheelSection(
     navController: NavHostController,
@@ -277,10 +279,8 @@ fun SpinWheelSection(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
 
-    // State Rotasi
     var rotationValue by remember { mutableFloatStateOf(0f) }
 
-    // Logika Spin
     val performSpin = {
         if (!spinning && !showResult) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -312,16 +312,16 @@ fun SpinWheelSection(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            // 1. KURANGI TINGGI BOX (Supaya tidak terlalu makan tempat ke bawah)
-            // Dari 420.dp -> 380.dp
-            .height(380.dp)
+            // 🔥 1. KURANGI TINGGI BOX (Supaya roda naik ke atas)
+            // Dari 380.dp -> 320.dp
+            .height(320.dp)
     ) {
 
         // 1. BAGIAN KIRI ATAS: MY DIETARY & TEXT
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 24.dp, top = 20.dp) // Padding top disesuaikan
+                .padding(start = 24.dp, top = 10.dp) // Padding top dikurangi dikit
         ) {
             Box(
                 modifier = Modifier
@@ -365,13 +365,13 @@ fun SpinWheelSection(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 10.dp),
+                .padding(bottom = 5.dp), // Padding bawah dikurangi
             contentAlignment = Alignment.Center
         ) {
             SpinWheel(
-                // 2. PERKECIL UKURAN RODA
-                // Dari 340.dp -> 290.dp (Agar tidak nabrak teks)
-                modifier = Modifier.size(290.dp),
+                // 🔥 2. PERKECIL UKURAN RODA SEDIKIT LAGI
+                // Dari 290.dp -> 270.dp (Agar muat di box yang lebih pendek)
+                modifier = Modifier.size(270.dp),
                 rotationTarget = rotationValue,
                 onClick = { performSpin() }
             )
@@ -385,9 +385,9 @@ fun SpinWheelSection(
             contentDescription = "Spin Me",
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                // 3. SESUAIKAN POSISI BUBBLE
-                // top dinaikkan ke 100.dp agar pas dengan roda yang mengecil
-                .padding(end = 40.dp, top = 100.dp)
+                // 🔥 3. NAIKKAN POSISI BUBBLE
+                // top: 100.dp -> 50.dp
+                .padding(end = 40.dp, top = 50.dp)
                 .size(80.dp)
         )
     }
@@ -440,45 +440,47 @@ fun SpinWheel(
     )
 
     Box(
-        modifier = modifier, // Ukuran dari luar (340.dp)
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        // LAYER 1: RODA PUTAR (Hijau/Jari-jari) - BERPUTAR
-        // PENTING: sp2 harus di belakang frame sp1 jika sp1 adalah frame
-        // TAPI: Berdasarkan gambar referensi (Orange memeluk Hijau),
-        // Hijau (sp2) di layer bawah, Orange (sp1) di layer atas.
-
+        // LAYER 1: RODA PUTAR (Hijau) - BERPUTAR DI BELAKANG
+        // ✅ Ukuran dikembalikan ke 1.0f (Full) agar pas mengisi frame
         Image(
             painter = painterResource(id = R.drawable.sp2),
             contentDescription = null,
             modifier = Modifier
-                .fillMaxSize(0.9f) // Sedikit lebih kecil dari frame agar pas di dalam
-                .graphicsLayer { rotationZ = animatedRotation }, // 🔥 INI YANG BERPUTAR
-            contentScale = ContentScale.Fit
+                .fillMaxSize(1.0f)
+                .offset(y = 2.dp) // Offset sama dengan sp1 biar center
+                .graphicsLayer { rotationZ = animatedRotation },
+            contentScale = ContentScale.Fit,
+            alignment = Alignment.Center
         )
 
-        // LAYER 2: BASE / FRAME (Orange) - DIAM
+        // LAYER 2: BASE / FRAME (Oranye) - DIAM DI DEPAN
         Image(
             painter = painterResource(id = R.drawable.sp1),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(), // Mengisi penuh kotak 340dp
-            contentScale = ContentScale.Fit
+            modifier = Modifier
+                .fillMaxSize(0.97f)
+                .offset(y = 15.dp),
+            contentScale = ContentScale.Fit,
+            alignment = Alignment.Center
         )
 
         // LAYER 3: TOMBOL TENGAH "TAP" (Putih) - DIAM
-        // Ini membuat tampilan persis seperti desain target
         Box(
             modifier = Modifier
-                .size(65.dp) // Ukuran lingkaran tengah
+                .size(65.dp)
+                .offset(y = 2.dp)
                 .clip(CircleShape)
                 .background(Color.White)
-                .border(2.dp, Color(0xFFF0F0F0), CircleShape) // Border halus
+                .border(2.dp, Color(0xFFF0F0F0), CircleShape)
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "TAP",
-                color = Color(0xFFE0E0E0), // Warna abu-abu muda
+                color = Color(0xFFE0E0E0),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 fontFamily = SourceSerifPro

@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll // ✅ Import ini penting
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,7 +34,6 @@ import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.viewmodel.IntakeViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.recappage.ui.theme.SourceSans3
-// ✅ Tambahkan import RegistrationViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 
 @Composable
@@ -40,26 +41,29 @@ fun IntakeDetailPage(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     viewModel: IntakeViewModel = hiltViewModel(),
-    // ✅ 1. Tambahkan Parameter ViewModel
     regViewModel: RegistrationViewModel = hiltViewModel()
 ) {
     var showSuccess by remember { mutableStateOf(false) }
     val serifFont = FontFamily(Font(R.font.source_serif_pro_regular))
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
 
-    // ✅ 2. Load Profile Data & Ambil URL
+    // ✅ State untuk scrolling
+    val scrollState = rememberScrollState()
+
+    // Load Profile Data
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
     val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // State Variables
+    // State Variables Input
     var menu by remember { mutableStateOf("") }
     var carbs by remember { mutableStateOf("") }
     var protein by remember { mutableStateOf("") }
     var fat by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
 
+    // Data dari ViewModel
     val totalCaloriesToday by viewModel.totalCaloriesToday.collectAsState()
     val targetCalories by viewModel.userGoal.collectAsState()
 
@@ -80,7 +84,10 @@ fun IntakeDetailPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Padding diatur agar tidak tertutup Header & Footer
                 .padding(top = 118.dp, bottom = 90.dp, start = 16.dp, end = 16.dp)
+                // ✅ JADIKAN SCROLLABLE
+                .verticalScroll(scrollState)
         ) {
             Text(
                 text = "My Intake",
@@ -254,14 +261,18 @@ fun IntakeDetailPage(
                         }
                     }
             )
+
+            // Spacer bawah agar bisa discroll lebih leluasa
+            Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // ✅ 3. Teruskan URL ke TopBorder
+        // Top Border (Fixed)
         TopBorder(
             navController = navController,
             photoUrl = profilePicUrl
         )
 
+        // Bottom Nav (Fixed)
         Component18(modifier = Modifier.align(Alignment.BottomCenter), navController = navController)
 
         // Popup Success
