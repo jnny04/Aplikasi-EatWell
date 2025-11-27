@@ -385,53 +385,126 @@ fun MacrosCard(
 
     Box(
         modifier = Modifier
-            .size(width = 320.dp, height = 240.dp)
+            .size(width = 320.dp, height = 240.dp)   // ✅ tinggi tetap
             .graphicsLayer {
-                shadowElevation = 12.dp.toPx()     // sama seperti CaloriesCard
+                shadowElevation = 12.dp.toPx()
                 shape = RoundedCornerShape(20.dp)
                 clip = true
             }
             .background(cardColor, RoundedCornerShape(20.dp))
-            .padding(horizontal = 24.dp, vertical = 20.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)  // 🔽 padding vertikal dirapetin sedikit
     ) {
         Column(
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
+            verticalArrangement = Arrangement.SpaceBetween  // ✅ bagi rata tinggi ke 4 item
         ) {
-            Text("Macros", fontFamily = SourceSerifPro, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Spacer(Modifier.height(20.dp))
-            MacroRowItem("Carbohydrates", cCarbs, tCarbs, Color(0xFF69DBED), R.drawable.carbs)
-            Spacer(Modifier.height(12.dp))
-            MacroRowItem("Protein", cProtein, tProtein, Color(0xFFF0DB54), R.drawable.protein)
-            Spacer(Modifier.height(12.dp))
-            MacroRowItem("Fat", cFat, tFat, Color(0xFF80EAC5), R.drawable.fat)
+            // 1) Judul
+            Text(
+                "Macros",
+                fontFamily = SourceSerifPro,
+                fontSize = 22.sp,                           // 🔽 sedikit lebih kecil dari 24.sp
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
+
+            // 2) Carbs
+            MacroRowItem(
+                label = "Carbohydrates",
+                consumed = cCarbs,
+                target = tCarbs,
+                color = Color(0xFF69DBED),
+                iconRes = R.drawable.carbs
+            )
+
+            // 3) Protein
+            MacroRowItem(
+                label = "Protein",
+                consumed = cProtein,
+                target = tProtein,
+                color = Color(0xFFF0DB54),
+                iconRes = R.drawable.protein
+            )
+
+            // 4) Fat
+            MacroRowItem(
+                label = "Fat",
+                consumed = cFat,
+                target = tFat,
+                color = Color(0xFF80EAC5),
+                iconRes = R.drawable.fat
+            )
         }
     }
 }
 
 @Composable
-fun MacroRowItem(label: String, consumed: Int, target: Int, color: Color, iconRes: Int) {
+fun MacroRowItem(
+    label: String,
+    consumed: Int,
+    target: Int,
+    color: Color,
+    iconRes: Int
+) {
     val progress = if (target > 0) (consumed.toFloat() / target.toFloat()).coerceIn(0f, 1f) else 0f
     val percentage = if (target > 0) ((consumed.toFloat() / target.toFloat()) * 100).toInt() else 0
 
-    // ✅ WARNA DINAMIS
     val textColor = MaterialTheme.colorScheme.onSurface
     val subTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
     val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
 
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Image(painter = painterResource(id = iconRes), contentDescription = label, modifier = Modifier.size(32.dp), contentScale = ContentScale.Fit)
-        Spacer(Modifier.width(12.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = label,
+            modifier = Modifier.size(28.dp),                 // 🔽 icon sedikit dikecilkan
+            contentScale = ContentScale.Fit
+        )
+        Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, fontFamily = SourceSans3, fontSize = 10.sp, color = subTextColor, modifier = Modifier.padding(bottom = 4.dp))
-            Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(trackColor)) {
-                Box(modifier = Modifier.fillMaxWidth(progress).fillMaxHeight().background(color))
+            Text(
+                text = label,
+                fontFamily = SourceSans3,
+                fontSize = 10.sp,
+                color = subTextColor,
+                modifier = Modifier.padding(bottom = 2.dp)   // 🔽 jarak label–bar dikecilkan
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(trackColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(color)
+                )
             }
         }
-        Spacer(Modifier.width(12.dp))
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(60.dp)) {
-            Text(text = "$percentage%", fontFamily = SourceSerifPro, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor)
-            Text(text = "$consumed/$target g", fontFamily = SourceSans3, fontSize = 9.sp, color = subTextColor)
+        Spacer(Modifier.width(8.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.width(60.dp)
+        ) {
+            Text(
+                text = "$percentage%",
+                fontFamily = SourceSerifPro,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor
+            )
+            Text(
+                text = "$consumed/$target g",
+                fontFamily = SourceSans3,
+                fontSize = 9.sp,
+                color = subTextColor
+            )
         }
     }
 }

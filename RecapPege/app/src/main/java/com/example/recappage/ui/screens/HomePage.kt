@@ -50,8 +50,12 @@ import androidx.compose.runtime.DisposableEffect
 import com.example.recappage.util.ShakeDetector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
+import com.example.recappage.ui.theme.TapRing
+import com.example.recappage.ui.theme.TapText
 
 
 fun Scaffold(
@@ -467,48 +471,66 @@ fun SpinWheel(
             alignment = Alignment.Center
         )
 
-        // LAYER 3: TOMBOL TENGAH "TAP" (theme-aware, Light & Dark)
         Box(
             modifier = Modifier
-                .size(80.dp)                        // outer circle lebih besar
+                .size(80.dp)
                 .offset(y = 5.dp)
-                .shadow(
-                    elevation = 16.dp,              // glow lembut
-                    shape = CircleShape,
-                    clip = false,
-                    ambientColor = Color.Black.copy(alpha = 0.10f),
-                    spotColor = Color.Black.copy(alpha = 0.20f)
-                )
-                .background(
-                    // dulu: Color(0xFFF4F4F4)
-                    // sekarang: pakai surfaceVariant biar nyatu dengan card di Light & Dark
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = CircleShape
-                )
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            // INNER CIRCLE – lingkaran utama
+
+            // Glow halus di belakang (radial gradient)
             Box(
                 modifier = Modifier
-                    .size(60.dp)                    // sedikit lebih kecil dari outer
+                    .matchParentSize()
+                    .drawBehind {
+                        val radius = size.minDimension / 2f * 1.35f
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0x33000000), // abu gelap transparan
+                                    Color.Transparent
+                                ),
+                                center = center,
+                                radius = radius
+                            )
+                        )
+                    }
+            )
+
+            // RING LUAR – lavender lembut seperti desain
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
                     .background(
-                        // dulu: Color.White
-                        // sekarang: surface (warna card utama, ikut tema)
-                        color = MaterialTheme.colorScheme.surface,
+                        color = TapRing,        // ⬅️ pakai warna custom
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "TAP",
-                    // dulu: Color(0xFFE0E0E0)
-                    // sekarang: onSurface dengan alpha supaya tetap kebaca di Light & Dark
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp,
-                    fontFamily = SourceSerifPro
-                )
+                // INNER CIRCLE – putih + border tipis
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = 0.6f),
+                            shape = CircleShape
+                        )
+                        .background(
+                            color = Color.White, // center benar-benar putih
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "TAP",
+                        color = TapText,        // abu muda untuk tulisan
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        fontFamily = SourceSerifPro
+                    )
+                }
             }
         }
     }
