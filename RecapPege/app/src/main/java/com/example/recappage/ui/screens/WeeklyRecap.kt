@@ -246,6 +246,7 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
             .background(Color.Transparent)
             .clickable { }
     ) {
+        // Gambar Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -265,15 +266,19 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
         }
         Spacer(modifier = Modifier.height(8.dp))
 
+        // 🔥 PERBAIKAN DI SINI (Nama Makanan)
         Text(
             text = entry.name,
             fontFamily = serifBold,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             color = Color.Black,
-            maxLines = 1
+            maxLines = 2, // ✅ Ubah jadi 2 baris (sebelumnya 1)
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, // ✅ Tambah titik-titik (...) jika masih kepanjangan
+            lineHeight = 18.sp // ✅ Atur jarak antar baris agar rapi
         )
 
+        // Kalori
         Text(
             text = "${entry.calories} Kcal",
             fontFamily = serifFont,

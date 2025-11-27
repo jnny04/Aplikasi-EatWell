@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField // ✅ Import baru
+import androidx.compose.foundation.text.KeyboardActions // ✅ Import baru
+import androidx.compose.foundation.text.KeyboardOptions // ✅ Import baru
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -21,7 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle // ✅ Import baru
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction // ✅ Import baru
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -37,10 +42,10 @@ import com.example.recappage.ui.components.FilterDialog
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.components.FoodPreviewPopup
 import com.example.recappage.ui.navigation.Screen
+import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.MainViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
-// ✅ 1. TAMBAHKAN IMPORT INI
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
@@ -54,11 +59,9 @@ fun FoodLibraryPage(
     viewModel: MainViewModel = hiltViewModel(),
     favVM: FavouriteViewModel
 ) {
-    // ✅ 2. INISIALISASI regViewModel DI SINI
     val regViewModel: RegistrationViewModel = hiltViewModel()
 
     val detail by viewModel.recipeDetail.collectAsState()
-    val macros by viewModel.macroData.collectAsState()
     val topCategories = listOf("All", "Breakfast", "Heavy Meal", "Snacks", "Dessert")
     var selectedTop by remember { mutableStateOf("All") }
     var showFilterPopup by remember { mutableStateOf(false) }
@@ -73,23 +76,26 @@ fun FoodLibraryPage(
         searchQuery?.let { URLDecoder.decode(it, "UTF-8") }
     }
 
+    // ✅ State untuk text field pencarian
+    var queryText by remember { mutableStateOf(decodedQuery ?: "") }
+
     val recipesState by viewModel.recipesResponse.observeAsState()
 
-    // ✅ 3. LOAD DATA PROFILE (Agar tidak null saat diambil)
+    // Load Data Profile
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
-
-    // Sekarang baris ini tidak akan error lagi
     val profilePicUrl = regViewModel.profileImageUrl.value
 
+    // ✅ Update queryText jika ada decodedQuery dari navigasi
     LaunchedEffect(decodedQuery) {
-        selectedTop = "All"
-
-        if (!decodedQuery.isNullOrEmpty()) {
+        if (decodedQuery != null) {
+            queryText = decodedQuery
             isSearchMode = true
+            selectedTop = "All"
             viewModel.searchRecipesByKeyword(decodedQuery)
         } else {
+            // Jika tidak ada query, load default (All)
             isSearchMode = false
             viewModel.loadAllRecipes()
         }
@@ -100,7 +106,7 @@ fun FoodLibraryPage(
         topBar = {
             TopBorder(
                 navController = navController,
-                photoUrl = profilePicUrl // ✅ SUDAH BENAR
+                photoUrl = profilePicUrl
             )
         },
         bottomBar = {
@@ -110,7 +116,7 @@ fun FoodLibraryPage(
             )
         }
     ) { padding ->
-        // ... (Kode selanjutnya tetap sama, tidak perlu diubah) ...
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -118,6 +124,7 @@ fun FoodLibraryPage(
                 .background(Color.White)
         ) {
 
+            // 1. KATEGORI (LazyRow)
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -133,7 +140,9 @@ fun FoodLibraryPage(
                         text = category,
                         selected = selectedTop == category,
                         onClick = {
+                            // Reset search saat klik kategori
                             isSearchMode = false
+                            queryText = "" // Kosongkan search bar
                             selectedTop = category
 
                             val tag = when (category) {
@@ -154,6 +163,91 @@ fun FoodLibraryPage(
                 }
             }
 
+            // ✅ 2. SEARCH BAR & FILTER ROW (Posisi Baru)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = 60.dp) // Di bawah kategori
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // BOX SEARCH BAR
+                Box(
+                    modifier = Modifier
+                        .weight(1f) // Mengisi sisa ruang
+                        .height(38.dp)
+                        .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
+                        .background(Color.White, RoundedCornerShape(20.dp))
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    // Hint Text
+                    if (queryText.isEmpty()) {
+                        Text(
+                            text = "Search recipes...",
+                            color = Color.Gray,
+                            fontSize = 12.sp,
+                            fontFamily = SourceSans3
+                        )
+                    }
+
+                    // Input Text
+                    BasicTextField(
+                        value = queryText,
+                        onValueChange = { queryText = it },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = Color.Black,
+                            fontSize = 12.sp,
+                            fontFamily = SourceSans3
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                if (queryText.isNotEmpty()) {
+                                    isSearchMode = true
+                                    selectedTop = "All" // Reset kategori ke All saat search
+                                    viewModel.searchRecipesByKeyword(queryText)
+                                } else {
+                                    isSearchMode = false
+                                    viewModel.loadAllRecipes()
+                                }
+                            }
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(end = 24.dp) // Padding kanan agar tidak nabrak icon
+                    )
+
+                    // Search Icon (di dalam box, sebelah kanan)
+                    Image(
+                        painter = painterResource(id = R.drawable.search_icon),
+                        contentDescription = "Search",
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(16.dp)
+                            .clickable {
+                                if (queryText.isNotEmpty()) {
+                                    isSearchMode = true
+                                    selectedTop = "All"
+                                    viewModel.searchRecipesByKeyword(queryText)
+                                }
+                            }
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // FILTER ICON (Dipindahkan ke sini)
+                Image(
+                    painter = painterResource(id = filterIcon),
+                    contentDescription = "Filter",
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clickable { showFilterPopup = true }
+                )
+            }
+
+            // 3. GRID RESEP
             when (val state = recipesState) {
 
                 is NetworkResult.Loading -> {
@@ -174,6 +268,7 @@ fun FoodLibraryPage(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
                             .align(Alignment.TopStart)
+                            // ✅ Offset disesuaikan agar tidak tertutup search bar (115dp sudah pas)
                             .offset(y = 115.dp)
                             .padding(horizontal = 12.dp)
                     ) {
@@ -205,16 +300,9 @@ fun FoodLibraryPage(
                 null -> {}
             }
 
-            Image(
-                painter = painterResource(id = filterIcon),
-                contentDescription = "Filter",
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = -32.dp, y = 65.dp)
-                    .size(32.dp)
-                    .clickable { showFilterPopup = true }
-            )
+            // (Kode Image Filter Icon yang lama DIHAPUS karena sudah dipindah ke Row di atas)
 
+            // POPUP FILTER
             if (showFilterPopup) {
                 Box(
                     modifier = Modifier
@@ -233,6 +321,7 @@ fun FoodLibraryPage(
                         onApply = { filter ->
                             isSearchMode = false
                             selectedTop = "All"
+                            queryText = "" // Reset search bar jika pakai filter
                             viewModel.loadWithFilter(filter)
                             showFilterPopup = false
                         }
@@ -240,6 +329,7 @@ fun FoodLibraryPage(
                 }
             }
 
+            // POPUP PREVIEW MAKANAN
             if (showPopup && selectedRecipe != null) {
                 FoodPreviewPopup(
                     image = selectedRecipe!!.image,
@@ -247,7 +337,7 @@ fun FoodLibraryPage(
                     detail = detail,
                     onClose = { showPopup = false },
                     onRecipeClick = {
-                        showPopup = false
+                        // Jangan tutup popup agar saat back tetap ada
                         navController.navigate(
                             Screen.MenuDetails.createRoute(selectedRecipe!!.id)
                         )
@@ -260,7 +350,7 @@ fun FoodLibraryPage(
     }
 }
 
-// ... (Sisa fungsi RecipeCard dan CategoryChip tetap sama)
+// ... (Komponen RecipeCard dan CategoryChip tetap sama)
 @Composable
 fun RecipeCard(
     recipe: Recipe,
@@ -341,9 +431,6 @@ fun RecipeCard(
                 modifier = Modifier.padding(horizontal = 10.dp)
             )
         }
-    }
-    LaunchedEffect(isFav) {
-        println("CHECK FAV: recipe.id = ${recipe.id}, isFav = $isFav")
     }
 }
 

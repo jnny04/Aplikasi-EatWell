@@ -1,5 +1,6 @@
 package com.example.recappage.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,11 +20,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign // ✅ Import TextAlign
+import androidx.compose.ui.text.style.TextOverflow // ✅ Import TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -34,10 +38,8 @@ import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.viewmodel.MonthlyRecapViewModel
-import kotlinx.coroutines.delay
-import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
 import com.example.recappage.util.PdfGenerator
+import kotlinx.coroutines.delay
 
 @Composable
 fun MonthlyRecapPage(
@@ -52,11 +54,12 @@ fun MonthlyRecapPage(
     val monthlyList by viewModel.monthlyIntakes.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
 
+    // Context untuk PDF & Email
     val context = LocalContext.current
 
     var expanded by remember { mutableStateOf(false) }
 
-    // State download (Simulasi)
+    // State download
     var isDownloading by remember { mutableStateOf(false) }
     var downloadComplete by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0) }
@@ -150,18 +153,13 @@ fun MonthlyRecapPage(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable {
-                        // Cek apakah ada data untuk di-download
                         if (monthlyList.isEmpty()) {
                             android.widget.Toast.makeText(context, "No data to download", android.widget.Toast.LENGTH_SHORT).show()
                             return@clickable
                         }
-
                         isDownloading = true
                         downloadComplete = false
                         progress = 0
-
-                        // MULAI PROSES DI BACKGROUND (Simulasi dengan LaunchedEffect di bawah UI tidak ideal untuk logic berat,
-                        // tapi untuk PDF sederhana ini oke. Idealnya di ViewModel, tapi kita pakai cara simpel di UI Event)
                     }
                 ) {
                     Image(
@@ -172,7 +170,7 @@ fun MonthlyRecapPage(
                 }
             }
 
-            // ✅ GRID MAKANAN (PERBAIKAN UTAMA DI SINI)
+            // ✅ GRID MAKANAN (TAMPILAN DISESUAIKAN)
             if (monthlyList.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -194,20 +192,18 @@ fun MonthlyRecapPage(
                     modifier = Modifier
                         .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 90.dp)
                         .fillMaxWidth()
-                        .weight(1f) // Isi sisa ruang ke bawah
+                        .weight(1f)
                 ) {
-                    // items sekarang merujuk ke fungsi ekstensi LazyGridScope
                     items(monthlyList) { item ->
-                        // Card Item Makanan
+                        // Card Item Makanan (Format baru)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(182.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xffd9d9d9)), // Background abu
-                            contentAlignment = Alignment.BottomCenter
+                                .clip(RoundedCornerShape(12.dp)) // ✅ Radius 12.dp
+                                .background(Color(0xffd9d9d9))
                         ) {
-                            // Gambar Makanan (AsyncImage)
+                            // Gambar Makanan
                             if (item.imageUrl != null) {
                                 AsyncImage(
                                     model = item.imageUrl,
@@ -217,20 +213,25 @@ fun MonthlyRecapPage(
                                 )
                             }
 
-                            // Nama Makanan (Overlay Putih di bawah)
+                            // Box Text di Bawah (Format baru)
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color.White.copy(alpha = 0.8f))
-                                    .padding(8.dp)
+                                    .height(44.dp) // ✅ Tinggi 44.dp
+                                    .align(Alignment.BottomCenter)
+                                    .background(Color.White.copy(alpha = 0.7f)), // ✅ Putih Transparan 0.7f
+                                contentAlignment = Alignment.Center // ✅ Teks di tengah
                             ) {
                                 Text(
                                     text = item.name,
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,           // ✅ 13.sp
+                                    color = Color(0xFF333333),  // ✅ Abu gelap
                                     fontWeight = FontWeight.Medium,
                                     fontFamily = serifFont,
-                                    color = Color(0xff555555),
-                                    maxLines = 1
+                                    textAlign = TextAlign.Center, // ✅ Rata tengah
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    lineHeight = 16.sp
                                 )
                             }
                         }
@@ -262,16 +263,15 @@ fun MonthlyRecapPage(
             navController = navController
         )
 
-        // === Popup Downloading (Biarkan sama) ===
+        // === Popup Downloading ===
         if (isDownloading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.45f))
-                    .zIndex(3f), // Pastikan paling atas
+                    .zIndex(3f),
                 contentAlignment = Alignment.Center
             ) {
-                // ... (Isi Popup Downloading sama seperti sebelumnya) ...
                 Box(modifier = Modifier.width(260.dp).wrapContentHeight()) {
                     Image(painter = painterResource(id = R.drawable.downloading), contentDescription = null, contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)))
                     Box(modifier = Modifier.align(Alignment.TopEnd).padding(10.dp).size(28.dp).clickable { isDownloading = false }, contentAlignment = Alignment.Center) {
@@ -285,9 +285,10 @@ fun MonthlyRecapPage(
                         Text(text = "Cancel", color = Color.Red, fontWeight = FontWeight.Medium, fontFamily = serifFont, fontSize = 9.sp)
                     }
                 }
+
+                // 🔥 LOGIKA DOWNLOAD & EMAIL 🔥
                 LaunchedEffect(Unit) {
                     progress = 0
-                    // Simulasi progress bar
                     while (progress < 90) {
                         delay(50)
                         progress += 10
@@ -297,7 +298,7 @@ fun MonthlyRecapPage(
                     val pdfUri = PdfGenerator.generateAndGetUri(context, monthlyList, selectedMonth)
 
                     progress = 100
-                    delay(500) // Biar user lihat 100% sebentar
+                    delay(500)
 
                     isDownloading = false
 
@@ -313,7 +314,6 @@ fun MonthlyRecapPage(
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
 
-                        // Jalankan Intent (Pilih aplikasi email)
                         try {
                             context.startActivity(Intent.createChooser(emailIntent, "Send email using..."))
                         } catch (e: Exception) {
@@ -347,9 +347,7 @@ fun MonthlyRecapPage(
     }
 }
 
-/**
- * Helper untuk pilih drawable bulan.
- */
+// Helper untuk drawable bulan (tetap sama)
 fun getMonthDrawable(month: String, isSelected: Boolean): Int {
     return when (month) {
         "January" -> if (isSelected) R.drawable.january_green else R.drawable.january
