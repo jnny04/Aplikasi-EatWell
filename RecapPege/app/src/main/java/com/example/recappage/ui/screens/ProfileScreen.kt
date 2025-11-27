@@ -71,7 +71,7 @@ fun ProfileScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background) // ✅ Dinamis
     ) {
 
         // Header Image
@@ -128,7 +128,7 @@ fun ProfileScreen(
                         .height(285.dp)
                         .shadow(6.dp, RoundedCornerShape(12.dp))
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface) // ✅ Dinamis
                 ) {
 
                     // Background Blur Logic

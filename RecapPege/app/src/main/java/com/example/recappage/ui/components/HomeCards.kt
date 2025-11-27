@@ -12,6 +12,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -138,8 +139,7 @@ fun CaloriesCard(
             .size(width = 320.dp, height = 240.dp)
             .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(0.7f), spotColor = Color.Black.copy(0.7f))
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .clickable { onClick() }
+            .background(MaterialTheme.colorScheme.surface)            .clickable { onClick() }
             .padding(20.dp)
     )
     {

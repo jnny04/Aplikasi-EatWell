@@ -21,12 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.example.recappage.R
 import com.example.recappage.ui.components.Component18
@@ -39,15 +36,28 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.recappage.model.Recipe
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.viewmodel.RecommendationViewModel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel // Import viewModel()
 import com.example.recappage.ui.viewmodel.IntakeViewModel // ✅ Import IntakeViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import androidx.compose.runtime.getValue // Pastikan ini ada untuk 'by' delegate
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.DisposableEffect
+import com.example.recappage.util.ShakeDetector
+import androidx.compose.material3.MaterialTheme
+
+
+fun Scaffold(
+    modifier: Modifier,
+    containerColor: Modifier,
+    contentWindowInsets: WindowInsets,
+    bottomBar: () -> Unit,
+    content: (PaddingValues) -> Unit
+) {
+}
 
 // -------------------------------------------------------------
 // MAIN HOMEPAGE
@@ -101,6 +111,7 @@ fun HomePage(navController: NavHostController) {
     // ====================================================
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             Component18(
@@ -114,6 +125,7 @@ fun HomePage(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = innerPadding.calculateBottomPadding())
+                .background(MaterialTheme.colorScheme.background)
         ) {
 
             Column(
@@ -205,9 +217,7 @@ fun TodayHeader(navController: NavHostController) {
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
-            color = Color.Black
-        )
-
+            color = MaterialTheme.colorScheme.onBackground        )
         Row(
             modifier = Modifier
                 .width(220.dp)
@@ -257,6 +267,35 @@ fun SpinWheelSection(
     var spinning by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     val coroutine = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val shakeDetector = remember { ShakeDetector(context) }
+    val performSpin = {
+        if (!spinning && !showResult) { // Cek agar tidak spin kalau sedang loading atau popup muncul
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress) // Getar saat shake
+            spinning = true
+            recViewModel.spin(dietary)
+
+            coroutine.launch {
+                delay(3000)
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                setShowResult(true)
+            }
+            coroutine.launch {
+                delay(3000)
+                spinning = false
+            }
+        }
+    }
+    // Aktifkan sensor saat komponen muncul, matikan saat hilang (Hemat Baterai & HCI yang benar)
+    DisposableEffect(Unit) {
+        shakeDetector.start {
+            performSpin() // Panggil fungsi spin saat terdeteksi guncangan
+        }
+        onDispose {
+            shakeDetector.stop() // Matikan sensor saat pindah halaman
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -264,7 +303,6 @@ fun SpinWheelSection(
             .padding(horizontal = 36.dp),
         contentAlignment = Alignment.TopStart
     ) {
-
         // SPIN WHEEL DISPLAY
         Box(
             modifier = Modifier
@@ -276,12 +314,18 @@ fun SpinWheelSection(
             SpinWheel(
                 modifier = Modifier.size(360.dp),
                 onClick = {
+                    performSpin()
                     if (!spinning) {
+                        // 2. JALANKAN GETARAN SAAT DIKLIK
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
                         spinning = true
                         recViewModel.spin(dietary)
 
                         coroutine.launch {
                             delay(3000)
+                            // 3. GETARAN LAGI SAAT HASIL MUNCUL (Opsional, agar user sadar)
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             setShowResult(true)
                         }
                         coroutine.launch {
