@@ -467,7 +467,7 @@ fun SpinWheel(
             alignment = Alignment.Center
         )
 
-        // LAYER 3: TOMBOL TENGAH "TAP" (Putih) - DIAM
+        // LAYER 3: TOMBOL TENGAH "TAP" (theme-aware, Light & Dark)
         Box(
             modifier = Modifier
                 .size(80.dp)                        // outer circle lebih besar
@@ -480,31 +480,36 @@ fun SpinWheel(
                     spotColor = Color.Black.copy(alpha = 0.20f)
                 )
                 .background(
-                    color = Color(0xFFF4F4F4),      // abu sangat muda, jadi kayak halo
+                    // dulu: Color(0xFFF4F4F4)
+                    // sekarang: pakai surfaceVariant biar nyatu dengan card di Light & Dark
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = CircleShape
                 )
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            // INNER CIRCLE – lingkaran putih bersih
+            // INNER CIRCLE – lingkaran utama
             Box(
                 modifier = Modifier
                     .size(60.dp)                    // sedikit lebih kecil dari outer
                     .background(
-                        color = Color.White,        // atau MaterialTheme.colorScheme.surface di light mode
+                        // dulu: Color.White
+                        // sekarang: surface (warna card utama, ikut tema)
+                        color = MaterialTheme.colorScheme.surface,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "TAP",
-                    color = Color(0xFFE0E0E0),      // abu muda, mirip desain emboss
+                    // dulu: Color(0xFFE0E0E0)
+                    // sekarang: onSurface dengan alpha supaya tetap kebaca di Light & Dark
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     fontFamily = SourceSerifPro
                 )
             }
         }
-
     }
 }

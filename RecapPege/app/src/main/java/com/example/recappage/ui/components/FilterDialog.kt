@@ -51,7 +51,8 @@ fun FilterDialog(
                 .width(380.dp)
                 .height(565.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
+                // ⬇️ pakai surface supaya ikut light/dark
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
 
@@ -72,6 +73,7 @@ fun FilterDialog(
                         fontFamily = SourceSerifPro,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
+                        // hijau brand tetap, biar konsisten
                         color = Color(0xFF5CA135)
                     )
                     TextButton(onClick = {
@@ -79,7 +81,8 @@ fun FilterDialog(
                     }) {
                         Text(
                             "Reset",
-                            color = Color.Gray,
+                            // ⬇️ pakai onSurface dengan alpha, bukan Gray fix
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             fontSize = 14.sp,
                             textDecoration = TextDecoration.Underline
                         )
@@ -135,7 +138,9 @@ fun FilterDialog(
                         onClick = { onApply(local); onDismiss() },
                         enabled = hasSelection,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (hasSelection) Color(0xFF5CA135) else Color(0xFFDADADA)
+                            // aktif: tetap hijau brand; non-aktif: pakai surfaceVariant
+                            containerColor = if (hasSelection) Color(0xFF5CA135)
+                            else MaterialTheme.colorScheme.surfaceVariant
                         ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
@@ -146,7 +151,11 @@ fun FilterDialog(
                             "Apply",
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
-                            color = if (hasSelection) Color.White else Color(0xFFBDBDBD),
+                            // teks putih kalau aktif, kalau disabled pakai onSurface dg alpha
+                            color = if (hasSelection)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             fontSize = 16.sp
                         )
                     }
@@ -212,7 +221,8 @@ fun FilterCheckBox(
         Text(
             label,
             fontSize = 16.sp,
-            color = Color.Black,
+            // ⬇️ pakai onSurface biar kebaca di dark mode
+            color = MaterialTheme.colorScheme.onSurface,
             fontFamily = SourceSans3,
             fontWeight = FontWeight.Medium
         )
@@ -230,10 +240,14 @@ fun CustomCheckBox(
             .clip(RoundedCornerShape(8.dp))
             .border(
                 width = if (checked) 2.dp else 1.dp,
-                color = if (checked) Color(0xFFFC7100) else Color(0xFFB8B8B8),
+                color = if (checked)
+                    Color(0xFFFC7100) // oranye brand
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(8.dp)
             )
-            .background(Color.White)
+            // ⬇️ surface, bukan putih fix
+            .background(MaterialTheme.colorScheme.surface)
             .clickable { onCheckedChange() },
         contentAlignment = Alignment.Center
     ) {
@@ -241,7 +255,7 @@ fun CustomCheckBox(
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Checked",
-                tint = Color(0xFFFC7100),
+                tint = Color(0xFFFC7100),  // oranye brand
                 modifier = Modifier.size(20.dp)
             )
         }
