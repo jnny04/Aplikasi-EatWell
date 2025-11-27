@@ -4,6 +4,10 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -11,6 +15,7 @@ import com.example.recappage.data.Repository
 import com.example.recappage.data.local.RecipeEntity
 import com.example.recappage.model.FoodRecipes
 import com.example.recappage.model.NutritionWidgetResponse
+import com.example.recappage.model.Recipe
 import com.example.recappage.model.RecipeInformation
 import com.example.recappage.util.ApiConfig
 import com.example.recappage.util.FilterMapper
@@ -39,16 +44,10 @@ class MainViewModel @Inject constructor(
     application: Application
 ) : AndroidViewModel(application) {
 
-    // ============================================================
-    // STATE: Recipes list (RESULT FINAL DIPAKAI FoodLibraryPage)
-    // ============================================================
+    // Status Network (Loading, Error, Success) untuk Feedback UI
     val recipesResponse: MutableLiveData<NetworkResult<FoodRecipes>> = MutableLiveData()
 
-
-    // ============================================================
-    // POPUP DETAIL STATES
-    // ============================================================
-
+    // Detail Resep & Nutrisi
     private val _recipeDetail = MutableStateFlow<RecipeInformation?>(null)
     val recipeDetail = _recipeDetail.asStateFlow()
 
@@ -57,9 +56,19 @@ class MainViewModel @Inject constructor(
 
     val macroData = MutableStateFlow<MacroData?>(null)
 
+    // ============================================================
+    // 🔥 PAGINATION STATE (List Utama untuk UI)
+    // ============================================================
+    // Gunakan list ini untuk menampilkan data di FoodLibraryPage
+    private val _paginatedRecipes = mutableStateListOf<Recipe>()
+    val paginatedRecipes: List<Recipe> get() = _paginatedRecipes
+
+    private var currentOffset = 0
+    var isPaginating by mutableStateOf(false)
+    var endReached by mutableStateOf(false)
 
     // ============================================================
-    // LOAD RECIPE DETAIL (FULL INFO + NUTRITION)
+    // LOAD RECIPE DETAIL
     // ============================================================
     fun loadRecipeDetail(id: Int) = viewModelScope.launch {
         try {
@@ -78,9 +87,7 @@ class MainViewModel @Inject constructor(
 
     private fun extractMacros(n: NutritionWidgetResponse?): MacroData? {
         if (n == null) return null
-
         fun find(name: String) = n.nutrients.firstOrNull { it.name == name }
-
         return MacroData(
             calories = "${find("Calories")?.amount?.toInt() ?: 0} kcal",
             protein = "${find("Protein")?.amount?.toInt() ?: 0} g",
@@ -89,10 +96,8 @@ class MainViewModel @Inject constructor(
         )
     }
 
-
-
     // ======================================================================
-    //  UNIVERSAL LOADER — RANDOMRECIPES & COMPLEXSEARCH (AUTO SWITCH)
+    //  SAFE CALL (RANDOM / LOAD ALL / FILTER)
     // ======================================================================
     private suspend fun getRecipesSafeCall(
         queries: Map<String, String>,
@@ -101,19 +106,26 @@ class MainViewModel @Inject constructor(
         recipesResponse.value = NetworkResult.Loading()
 
         if (!hasInternetConnection()) {
-            loadFromCache()
+            loadFromCache() // Jika offline, ambil dari cache
             return
         }
 
         try {
-            val response =
-                if (useComplexSearch) repository.remote.searchRecipes(queries)
-                else repository.remote.getRandomRecipes(queries)
+            val response = if (useComplexSearch) {
+                repository.remote.searchRecipes(queries)
+            } else {
+                repository.remote.getRandomRecipes(queries)
+            }
 
             val networkResult = handleFoodRecipesResponse(response)
 
+            // Jika sukses, simpan ke cache DAN update list pagination UI
             if (networkResult is NetworkResult.Success && networkResult.data != null) {
                 saveToCache(networkResult.data)
+
+                // Update List Utama UI
+                _paginatedRecipes.clear()
+                _paginatedRecipes.addAll(networkResult.data.recipes)
             }
 
             recipesResponse.value = networkResult
@@ -123,14 +135,16 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
     // ======================================================================
-    // LOADERS FOR FOOD LIBRARY
+    // LOADERS (HOME / LIBRARY AWAL)
     // ======================================================================
 
     fun loadAllRecipes() = viewModelScope.launch {
+        // Reset pagination karena ini load awal/kategori baru
+        resetPagination()
+
         val q = mapOf(
-            "number" to "30",
+            "number" to "20",
             "addRecipeInformation" to "true",
             "fillIngredients" to "true",
             "apiKey" to ApiConfig.API_KEY
@@ -139,6 +153,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun loadRecipesByTag(tag: String?) = viewModelScope.launch {
+        resetPagination()
         val q = mutableMapOf(
             "number" to "30",
             "addRecipeInformation" to "true",
@@ -151,53 +166,77 @@ class MainViewModel @Inject constructor(
     }
 
     fun loadWithFilter(filter: FilterState) = viewModelScope.launch {
+        resetPagination()
         val q = FilterMapper.toQueries(filter)
         getRecipesSafeCall(q, useComplexSearch = false)
     }
 
+    // ======================================================================
+    // 🔍 SEARCH & PAGINATION LOGIC
+    // ======================================================================
 
-    // ======================================================================
-    // SEARCH (COMPLEX SEARCH)
-    // ======================================================================
+    fun resetPagination() {
+        _paginatedRecipes.clear()
+        currentOffset = 0
+        endReached = false
+    }
+
+    // Dipanggil saat user pertama kali tekan Enter/Search
     fun searchRecipesByKeyword(keyword: String) = viewModelScope.launch {
+        resetPagination() // Bersihkan data lama
+        loadNextPage(keyword) // Load halaman pertama
+    }
 
-        val q = mapOf(
+    // Dipanggil saat user scroll ke bawah (Load More)
+    fun loadNextPage(keyword: String) = viewModelScope.launch {
+        // Cegah loading dobel atau jika data sudah habis
+        if (isPaginating || endReached) return@launch
+
+        isPaginating = true
+
+        // Kita gunakan Map Query agar kompatibel dengan RemoteDataSource yang sudah ada
+        val queries = mapOf(
             "query" to keyword,
             "number" to "30",
+            "offset" to currentOffset.toString(), // 👈 Offset dikirim lewat Map
             "addRecipeInformation" to "true",
             "apiKey" to ApiConfig.API_KEY
         )
 
-        getRecipesSafeCall(q, useComplexSearch = true)
+        try {
+            // Gunakan searchRecipes yang menerima Map (sudah ada di RemoteDataSource)
+            val response = repository.remote.searchRecipes(queries)
+
+            if (response.isSuccessful) {
+                val newRecipes = response.body()?.recipes ?: emptyList()
+
+                if (newRecipes.isNotEmpty()) {
+                    _paginatedRecipes.addAll(newRecipes) // Append data baru
+                    currentOffset += 30 // Naikkan offset
+                } else {
+                    endReached = true // Data habis
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            isPaginating = false
+        }
     }
-
-
 
     // ======================================================================
     // RESPONSE HANDLER
     // ======================================================================
     private fun handleFoodRecipesResponse(response: Response<FoodRecipes>): NetworkResult<FoodRecipes> {
-
         val body = response.body()
-
         return when {
-            response.message().contains("timeout") ->
-                NetworkResult.Error("Timeout")
-
-            response.code() == 402 ->
-                NetworkResult.Error("API Key Limited.")
-
-            body?.recipes.isNullOrEmpty() ->
-                NetworkResult.Error("Recipes not found.")
-
-            response.isSuccessful ->
-                NetworkResult.Success(body!!)
-
-            else ->
-                NetworkResult.Error(response.message())
+            response.message().contains("timeout") -> NetworkResult.Error("Timeout")
+            response.code() == 402 -> NetworkResult.Error("API Key Limited.")
+            body?.recipes.isNullOrEmpty() -> NetworkResult.Error("Recipes not found.")
+            response.isSuccessful -> NetworkResult.Success(body!!)
+            else -> NetworkResult.Error(response.message())
         }
     }
-
 
     // ======================================================================
     // LOCAL CACHE (ROOM)
@@ -211,17 +250,19 @@ class MainViewModel @Inject constructor(
     private fun loadFromCache() = viewModelScope.launch {
         repository.local.readRecipes().collectLatest { cached ->
             if (cached.isNotEmpty()) {
-                recipesResponse.postValue(
-                    NetworkResult.Success(
-                        FoodRecipes(cached.map { it.toRecipe() })
-                    )
-                )
+                val recipes = cached.map { it.toRecipe() }
+
+                // Update State Response
+                recipesResponse.postValue(NetworkResult.Success(FoodRecipes(recipes)))
+
+                // Update List UI juga agar sinkron
+                _paginatedRecipes.clear()
+                _paginatedRecipes.addAll(recipes)
             } else {
                 recipesResponse.postValue(NetworkResult.Error("No Internet & No Cache"))
             }
         }
     }
-
 
     // ======================================================================
     // INTERNET CHECKER
@@ -229,10 +270,8 @@ class MainViewModel @Inject constructor(
     private fun hasInternetConnection(): Boolean {
         val connectivityManager = getApplication<Application>()
             .getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
         val network = connectivityManager.activeNetwork ?: return false
         val caps = connectivityManager.getNetworkCapabilities(network) ?: return false
-
         return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)

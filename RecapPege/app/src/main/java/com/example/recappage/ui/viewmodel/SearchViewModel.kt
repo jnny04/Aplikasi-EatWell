@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recappage.data.FoodRepository
 import com.example.recappage.model.FoodRecipes
-import com.example.recappage.model.SearchHistory // ✅ Pastikan file model ini sudah dibuat
+import com.example.recappage.model.SearchHistory
 import com.example.recappage.util.NetworkResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,7 +29,8 @@ class SearchViewModel @Inject constructor(
     // ✅ Inisialisasi Firebase
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
-    // ✅ 1. VARIABLE UNTUK MENAMPUNG LIST HISTORY
+
+    // ✅ VARIABLE UNTUK MENAMPUNG LIST HISTORY
     val searchHistory = MutableLiveData<List<String>>()
 
     // ---------------------------------------------------
@@ -39,7 +40,9 @@ class SearchViewModel @Inject constructor(
         searchResult.value = NetworkResult.Loading()
 
         try {
-            val response = repository.searchRecipes(query)
+            // 🔥 PERBAIKAN DI SINI: Tambahkan angka 0 sebagai parameter kedua (offset)
+            val response = repository.searchRecipes(query, 0)
+
             searchResult.value = handleResponse(response)
 
         } catch (e: Exception) {
@@ -64,9 +67,9 @@ class SearchViewModel @Inject constructor(
     // ---------------------------------------------------
     // ✨ REAL-TIME LIVE SUGGESTION
     // ---------------------------------------------------
-    fun loadSuggestions(query: String) {
+    fun loadSuggestions(queryInput: String) { // Ubah nama parameter agar tidak bentrok dengan class Query
 
-        if (query.isBlank()) {
+        if (queryInput.isBlank()) {
             suggestions.value = emptyList()
             return
         }
@@ -77,7 +80,8 @@ class SearchViewModel @Inject constructor(
             delay(250) // Debounce
 
             try {
-                val response = repository.searchRecipes(query)
+                // 🔥 PERBAIKAN DI SINI: Tambahkan angka 0 sebagai parameter kedua (offset)
+                val response = repository.searchRecipes(queryInput, 0)
 
                 if (response.isSuccessful) {
                     val titles = response.body()?.recipes
@@ -98,15 +102,15 @@ class SearchViewModel @Inject constructor(
     }
 
     // ---------------------------------------------------
-    // ✅ FUNGSI BARU: SIMPAN HISTORY KE FIREBASE
+    // ✅ FUNGSI: SIMPAN HISTORY KE FIREBASE
     // ---------------------------------------------------
-    fun saveSearchHistory(query: String) {
+    fun saveSearchHistory(queryInput: String) {
         val uid = auth.currentUser?.uid ?: return
 
-        if (query.isBlank()) return
+        if (queryInput.isBlank()) return
 
         // Pastikan class SearchHistory sudah dibuat di folder model
-        val historyItem = SearchHistory(query = query)
+        val historyItem = SearchHistory(query = queryInput)
 
         db.collection("users")
             .document(uid)
@@ -120,15 +124,18 @@ class SearchViewModel @Inject constructor(
             }
     }
 
-    // ✅ 2. FUNGSI BARU: LOAD HISTORY DARI FIREBASE
+    // ---------------------------------------------------
+    // ✅ FUNGSI: LOAD HISTORY DARI FIREBASE
+    // ---------------------------------------------------
     fun loadSearchHistory() {
         val uid = auth.currentUser?.uid ?: return
 
         db.collection("users")
             .document(uid)
             .collection("search_history")
-            .orderBy("timestamp", Query.Direction.DESCENDING) // Urutkan dari yang terbaru
-            .limit(10) // Ambil 10 terakhir saja biar rapi
+            // Menggunakan Query.Direction dari import Firestore
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(10)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
 
@@ -141,4 +148,4 @@ class SearchViewModel @Inject constructor(
             }
     }
 
-} // ✅ Pastikan kurung tutup Class ada di paling akhir sini
+}

@@ -41,15 +41,14 @@ class FoodRepository @Inject constructor(
         return api.getNutritionDetail(id)
     }
 
-    suspend fun searchRecipes(query: String): Response<FoodRecipes> {
-
+    suspend fun searchRecipes(query: String, offset: Int): Response<FoodRecipes> { // 👈 Tambah offset
         val queries = mutableMapOf(
             "query" to query,
-            "number" to "20",
+            "number" to "20", // Load 30 per batch
+            "offset" to offset.toString(), // 👈 Kirim offset ke API
             "addRecipeInformation" to "true",
-            "apiKey" to ApiConfig.API_KEY   // <-- ini yang perlu ditambah
+            "apiKey" to ApiConfig.API_KEY
         )
-
         return api.searchRecipes(queries)
     }
 

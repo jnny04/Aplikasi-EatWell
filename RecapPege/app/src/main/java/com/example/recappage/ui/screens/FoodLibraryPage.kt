@@ -1,5 +1,7 @@
 package com.example.recappage.ui.screens
 
+import android.content.Intent // ✅ Import Intent
+import android.net.Uri // ✅ Import Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,12 +9,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField // ✅ Import baru
-import androidx.compose.foundation.text.KeyboardActions // ✅ Import baru
-import androidx.compose.foundation.text.KeyboardOptions // ✅ Import baru
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -22,13 +25,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalContext // ✅ Import LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle // ✅ Import baru
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction // ✅ Import baru
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -49,7 +51,6 @@ import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
-import androidx.compose.runtime.getValue
 
 @Composable
 fun FoodLibraryPage(
@@ -60,6 +61,7 @@ fun FoodLibraryPage(
     favVM: FavouriteViewModel
 ) {
     val regViewModel: RegistrationViewModel = hiltViewModel()
+    val context = LocalContext.current // ✅ Simpan context untuk membuka link
 
     val detail by viewModel.recipeDetail.collectAsState()
     val topCategories = listOf("All", "Breakfast", "Heavy Meal", "Snacks", "Dessert")
@@ -76,18 +78,19 @@ fun FoodLibraryPage(
         searchQuery?.let { URLDecoder.decode(it, "UTF-8") }
     }
 
-    // ✅ State untuk text field pencarian
     var queryText by remember { mutableStateOf(decodedQuery ?: "") }
 
+    val paginatedRecipes = viewModel.paginatedRecipes
+    val isPaginating = viewModel.isPaginating
     val recipesState by viewModel.recipesResponse.observeAsState()
 
-    // Load Data Profile
+    val scrollState = rememberLazyGridState()
+
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
     val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // ✅ Update queryText jika ada decodedQuery dari navigasi
     LaunchedEffect(decodedQuery) {
         if (decodedQuery != null) {
             queryText = decodedQuery
@@ -95,14 +98,30 @@ fun FoodLibraryPage(
             selectedTop = "All"
             viewModel.searchRecipesByKeyword(decodedQuery)
         } else {
-            // Jika tidak ada query, load default (All)
             isSearchMode = false
             viewModel.loadAllRecipes()
         }
     }
 
+    val shouldPaginate = remember {
+        derivedStateOf {
+            val totalItemsCount = scrollState.layoutInfo.totalItemsCount
+            val lastVisibleItemIndex =
+                scrollState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItemsCount > 0 && lastVisibleItemIndex >= (totalItemsCount - 6)
+        }
+    }
+
+    LaunchedEffect(shouldPaginate.value) {
+        if (shouldPaginate.value && !isPaginating && isSearchMode && queryText.isNotEmpty()) {
+            viewModel.loadNextPage(queryText)
+        }
+    }
+
     Scaffold(
-        modifier = modifier.fillMaxSize().background(Color.White),
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White),
         topBar = {
             TopBorder(
                 navController = navController,
@@ -135,16 +154,13 @@ fun FoodLibraryPage(
             ) {
                 items(topCategories.size) { index ->
                     val category = topCategories[index]
-
                     CategoryChip(
                         text = category,
                         selected = selectedTop == category,
                         onClick = {
-                            // Reset search saat klik kategori
                             isSearchMode = false
-                            queryText = "" // Kosongkan search bar
+                            queryText = ""
                             selectedTop = category
-
                             val tag = when (category) {
                                 "Breakfast" -> "breakfast"
                                 "Heavy Meal" -> "main course"
@@ -152,7 +168,6 @@ fun FoodLibraryPage(
                                 "Dessert" -> "dessert"
                                 else -> null
                             }
-
                             if (category == "All") {
                                 viewModel.loadAllRecipes()
                             } else {
@@ -163,26 +178,24 @@ fun FoodLibraryPage(
                 }
             }
 
-            // ✅ 2. SEARCH BAR & FILTER ROW (Posisi Baru)
+            // 2. SEARCH BAR & FILTER ROW
             Row(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = 60.dp) // Di bawah kategori
+                    .offset(y = 60.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // BOX SEARCH BAR
                 Box(
                     modifier = Modifier
-                        .weight(1f) // Mengisi sisa ruang
+                        .weight(1f)
                         .height(38.dp)
                         .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
                         .background(Color.White, RoundedCornerShape(20.dp))
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    // Hint Text
                     if (queryText.isEmpty()) {
                         Text(
                             text = "Search recipes...",
@@ -191,8 +204,6 @@ fun FoodLibraryPage(
                             fontFamily = SourceSans3
                         )
                     }
-
-                    // Input Text
                     BasicTextField(
                         value = queryText,
                         onValueChange = { queryText = it },
@@ -207,7 +218,7 @@ fun FoodLibraryPage(
                             onSearch = {
                                 if (queryText.isNotEmpty()) {
                                     isSearchMode = true
-                                    selectedTop = "All" // Reset kategori ke All saat search
+                                    selectedTop = "All"
                                     viewModel.searchRecipesByKeyword(queryText)
                                 } else {
                                     isSearchMode = false
@@ -215,10 +226,10 @@ fun FoodLibraryPage(
                                 }
                             }
                         ),
-                        modifier = Modifier.fillMaxWidth().padding(end = 24.dp) // Padding kanan agar tidak nabrak icon
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 24.dp)
                     )
-
-                    // Search Icon (di dalam box, sebelah kanan)
                     Image(
                         painter = painterResource(id = R.drawable.search_icon),
                         contentDescription = "Search",
@@ -234,10 +245,7 @@ fun FoodLibraryPage(
                             }
                     )
                 }
-
                 Spacer(modifier = Modifier.width(12.dp))
-
-                // FILTER ICON (Dipindahkan ke sini)
                 Image(
                     painter = painterResource(id = filterIcon),
                     contentDescription = "Filter",
@@ -248,31 +256,37 @@ fun FoodLibraryPage(
             }
 
             // 3. GRID RESEP
-            when (val state = recipesState) {
-
-                is NetworkResult.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFF5CA135))
-                    }
+            val state = recipesState
+            if (state is NetworkResult.Loading && paginatedRecipes.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFF5CA135))
                 }
-
-                is NetworkResult.Success -> {
-                    val recipes = state.data?.recipes.orEmpty()
-
+            } else if (state is NetworkResult.Error<*> && paginatedRecipes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "⚠️ ${state.message ?: "Error loading recipes"}",
+                        color = Color.Red,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            } else {
+                if (paginatedRecipes.isNotEmpty()) {
                     LazyVerticalGrid(
+                        state = scrollState,
                         columns = GridCells.Fixed(2),
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            // ✅ Offset disesuaikan agar tidak tertutup search bar (115dp sudah pas)
                             .offset(y = 115.dp)
                             .padding(horizontal = 12.dp)
+                            .padding(bottom = 80.dp)
                     ) {
-                        items(recipes) { recipe ->
+                        items(paginatedRecipes.size) { index ->
+                            val recipe = paginatedRecipes[index]
                             RecipeCard(
                                 recipe = recipe,
                                 navController = navController,
@@ -284,25 +298,25 @@ fun FoodLibraryPage(
                                 }
                             )
                         }
+                        if (isPaginating) {
+                            item(span = { GridItemSpan(2) }) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF5CA135),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
-
-                is NetworkResult.Error<*> -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "⚠️ ${state.message ?: "Error loading recipes"}",
-                            color = Color.Red,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                null -> {}
             }
 
-            // (Kode Image Filter Icon yang lama DIHAPUS karena sudah dipindah ke Row di atas)
-
-            // POPUP FILTER
             if (showFilterPopup) {
                 Box(
                     modifier = Modifier
@@ -315,13 +329,12 @@ fun FoodLibraryPage(
                             .background(Color.Black.copy(alpha = 0.4f))
                             .clickable { showFilterPopup = false }
                     )
-
                     FilterDialog(
                         onDismiss = { showFilterPopup = false },
                         onApply = { filter ->
                             isSearchMode = false
                             selectedTop = "All"
-                            queryText = "" // Reset search bar jika pakai filter
+                            queryText = ""
                             viewModel.loadWithFilter(filter)
                             showFilterPopup = false
                         }
@@ -329,7 +342,7 @@ fun FoodLibraryPage(
                 }
             }
 
-            // POPUP PREVIEW MAKANAN
+            // 4. POPUP PREVIEW (Tombol Order Di Sini)
             if (showPopup && selectedRecipe != null) {
                 FoodPreviewPopup(
                     image = selectedRecipe!!.image,
@@ -337,20 +350,21 @@ fun FoodLibraryPage(
                     detail = detail,
                     onClose = { showPopup = false },
                     onRecipeClick = {
-                        // Jangan tutup popup agar saat back tetap ada
                         navController.navigate(
                             Screen.MenuDetails.createRoute(selectedRecipe!!.id)
                         )
                     },
-                    onOrderClick = {}
+                    // 🔥 PERBAIKAN: Isi logika order di sini
+                    onOrderClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                        context.startActivity(intent)
+                    }
                 )
             }
-
         }
     }
 }
 
-// ... (Komponen RecipeCard dan CategoryChip tetap sama)
 @Composable
 fun RecipeCard(
     recipe: Recipe,
@@ -358,9 +372,8 @@ fun RecipeCard(
     favVM: FavouriteViewModel,
     onSelect: () -> Unit
 ) {
-    val isFav by remember {
-        derivedStateOf { favVM.isFavorite(recipe) }
-    }
+    val isFav by remember { derivedStateOf { favVM.isFavorite(recipe) } }
+    val context = LocalContext.current // ✅ Context untuk membuka Grab
 
     Box(
         modifier = Modifier
@@ -378,9 +391,7 @@ fun RecipeCard(
                 .fillMaxSize()
                 .clip(RoundedCornerShape(12.dp))
                 .zIndex(1f)
-                .clickable {
-                    onSelect()
-                }
+                .clickable { onSelect() }
         )
 
         Row(
@@ -392,10 +403,17 @@ fun RecipeCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+            // 🔥 PERBAIKAN: Tombol Ojek di Kartu Grid
             Image(
                 painter = painterResource(id = R.drawable.ojek),
-                contentDescription = null,
-                modifier = Modifier.size(22.dp)
+                contentDescription = "Order Grab",
+                modifier = Modifier
+                    .size(22.dp)
+                    .clickable {
+                        // Buka Grab saat ikon motor diklik
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                        context.startActivity(intent)
+                    }
             )
 
             Image(
@@ -405,9 +423,7 @@ fun RecipeCard(
                 contentDescription = "Favorite",
                 modifier = Modifier
                     .size(26.dp)
-                    .clickable {
-                        favVM.toggleFavorite(recipe)
-                    }
+                    .clickable { favVM.toggleFavorite(recipe) }
             )
         }
 

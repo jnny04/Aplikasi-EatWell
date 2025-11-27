@@ -175,6 +175,7 @@ fun HomePage(navController: NavHostController) {
     // POPUP DI LUAR SCAFFOLD → SELALU DI ATAS BOTTOM BAR
     // ====================================================
     val food = randomFood
+    val context = androidx.compose.ui.platform.LocalContext.current
     if (showResult && food != null) {
         FoodPreviewPopup(
             image = food.image,
@@ -186,7 +187,10 @@ fun HomePage(navController: NavHostController) {
                 showResult = false
                 navController.navigate(Screen.MenuDetails.createRoute(food.id))
             },
-            onOrderClick = {},
+            onOrderClick = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://food.grab.com/id/en/"))
+                context.startActivity(intent)
+            },
             fromHomePage = true,
             onSpinAgain = {
                 showResult = false
@@ -436,27 +440,24 @@ fun SpinWheel(
     )
 
     Box(
-        modifier = modifier.clickable {
-            onClick()
-        },
+        modifier = modifier.clickable { onClick() }, // ✅ Pakai 'modifier' (kecil) di sini
         contentAlignment = Alignment.Center
     ) {
-
         Image(
             painter = painterResource(id = R.drawable.sp2),
             contentDescription = null,
+            // ⚠️ PERBAIKAN DI SINI:
+            // JANGAN pakai 'modifier'. Pakai 'Modifier' (besar) dan set size 280.dp
             modifier = Modifier
-                .size(280.dp)
+                .size(280.dp) // ✅ Pastikan ini 280.dp
                 .offset(y = (-13).dp)
-                // 5. Gunakan animatedRotation
                 .graphicsLayer { rotationZ = animatedRotation },
             contentScale = ContentScale.Fit
         )
-
         Image(
             painter = painterResource(id = R.drawable.sp1),
             contentDescription = null,
-            modifier = Modifier.size(260.dp),
+            modifier = Modifier.size(260.dp), // ✅ Pastikan ini 260.dp
             contentScale = ContentScale.Fit
         )
     }
