@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme // ✅ Import MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -52,21 +53,23 @@ fun FoodPreviewPopup(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.45f))
+            .background(Color.Black.copy(alpha = 0.6f)) // Gelapkan background overlay
             .zIndex(10f)
+            .clickable { onClose() } // Klik luar untuk tutup
     ) {
 
-        Box(modifier = Modifier.align(Alignment.Center)) {
+        Box(modifier = Modifier.align(Alignment.Center).clickable(enabled = false) {}) {
 
             // =============================
-            //   CARD PUTIH
+            //   CARD (ADAPTIF DARK MODE)
             // =============================
             Box(
                 modifier = Modifier
                     .width(380.dp)
                     .height(cardHeight)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White)
+                    // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.surface
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
 
                 Column(
@@ -83,6 +86,8 @@ fun FoodPreviewPopup(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         lineHeight = 30.sp,
+                        // ✅ GANTI: Default Black -> onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -93,7 +98,7 @@ fun FoodPreviewPopup(
                         fontSize = 14.sp,
                         fontFamily = SourceSerifPro,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF5CA135),
+                        color = Color(0xFF5CA135), // Hijau tetap
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
 
@@ -103,6 +108,8 @@ fun FoodPreviewPopup(
                         textAlign = TextAlign.Center,
                         maxLines = 6,
                         lineHeight = 16.sp,
+                        // ✅ GANTI: Default Black -> onSurface
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -152,9 +159,12 @@ fun FoodPreviewPopup(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
 
-                            Image(
+                            // GANTI IKON JIKA PERLU (Opsional, tapi tinting lebih aman)
+                            Icon(
                                 painter = painterResource(id = R.drawable.refreshnobg),
                                 contentDescription = null,
+                                // ✅ GANTI: Tinting sesuai tema
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.size(32.dp)
                             )
 
@@ -163,7 +173,8 @@ fun FoodPreviewPopup(
                             Text(
                                 text = "Spin Again",
                                 fontSize = 14.sp,
-                                color = Color.DarkGray
+                                // ✅ GANTI: Color.DarkGray -> onSurface
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -173,7 +184,7 @@ fun FoodPreviewPopup(
             }
 
             // =============================
-            // GAMBAR
+            // GAMBAR (Tetap sama)
             // =============================
             AsyncImage(
                 model = image,
@@ -193,11 +204,12 @@ fun FoodPreviewPopup(
             Icon(
                 painter = painterResource(id = R.drawable.cancel),
                 contentDescription = "Close",
-                tint = Color.DarkGray,
+                // ✅ GANTI: Tinting ke onSurface
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
-                    .size(15.dp)
+                    .size(24.dp) // Sedikit diperbesar agar mudah diklik
                     .align(Alignment.TopEnd)
-                    .offset(x = (-12).dp, y = (12).dp)
+                    .offset(x = (-16).dp, y = (16).dp)
                     .zIndex(6f)
                     .clickable { onClose() }
             )

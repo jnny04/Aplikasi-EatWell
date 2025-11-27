@@ -50,6 +50,7 @@ import androidx.compose.runtime.DisposableEffect
 import com.example.recappage.util.ShakeDetector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.ColorFilter
 
 
@@ -385,10 +386,9 @@ fun SpinWheelSection(
             contentDescription = "Spin Me",
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                // 🔥 3. NAIKKAN POSISI BUBBLE
-                // top: 100.dp -> 50.dp
                 .padding(end = 40.dp, top = 50.dp)
                 .size(80.dp)
+                .clickable { performSpin() }   // ⬅️ ini aja
         )
     }
 
@@ -470,21 +470,41 @@ fun SpinWheel(
         // LAYER 3: TOMBOL TENGAH "TAP" (Putih) - DIAM
         Box(
             modifier = Modifier
-                .size(65.dp)
-                .offset(y = 2.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .border(2.dp, Color(0xFFF0F0F0), CircleShape)
+                .size(80.dp)                        // outer circle lebih besar
+                .offset(y = 5.dp)
+                .shadow(
+                    elevation = 16.dp,              // glow lembut
+                    shape = CircleShape,
+                    clip = false,
+                    ambientColor = Color.Black.copy(alpha = 0.10f),
+                    spotColor = Color.Black.copy(alpha = 0.20f)
+                )
+                .background(
+                    color = Color(0xFFF4F4F4),      // abu sangat muda, jadi kayak halo
+                    shape = CircleShape
+                )
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "TAP",
-                color = Color(0xFFE0E0E0),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                fontFamily = SourceSerifPro
-            )
+            // INNER CIRCLE – lingkaran putih bersih
+            Box(
+                modifier = Modifier
+                    .size(60.dp)                    // sedikit lebih kecil dari outer
+                    .background(
+                        color = Color.White,        // atau MaterialTheme.colorScheme.surface di light mode
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "TAP",
+                    color = Color(0xFFE0E0E0),      // abu muda, mirip desain emboss
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    fontFamily = SourceSerifPro
+                )
+            }
         }
+
     }
 }

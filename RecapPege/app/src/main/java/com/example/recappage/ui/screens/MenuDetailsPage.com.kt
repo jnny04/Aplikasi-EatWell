@@ -32,7 +32,6 @@ import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.MainViewModel
 import com.example.recappage.ui.viewmodel.IntakeViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
-// ✅ Import FavouriteViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,16 +42,12 @@ fun MenuDetailsPage(
     viewModel: MainViewModel = hiltViewModel(),
     intakeViewModel: IntakeViewModel = hiltViewModel(),
     regViewModel: RegistrationViewModel = hiltViewModel(),
-    // ✅ 1. Tambahkan FavouriteViewModel
     favViewModel: FavouriteViewModel = hiltViewModel()
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
     val recipe = viewModel.recipeDetail.collectAsState().value
     val macroData = viewModel.macroData.collectAsState().value
-
-    // ✅ 2. Cek apakah makanan ini ada di daftar favorit
-    // Kita cek apakah ada item di list favourites yang ID-nya sama dengan foodId
     val isFav = favViewModel.favourites.any { it.id == foodId }
 
     // Load Profile
@@ -66,6 +61,7 @@ fun MenuDetailsPage(
         viewModel.loadRecipeDetail(foodId)
     }
 
+    // State Bottom Sheet
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
@@ -90,30 +86,84 @@ fun MenuDetailsPage(
         bottomBar = {
             Component18(navController = navController)
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
 
-        BottomSheetScaffold(
-            modifier = Modifier.padding(innerPadding),
-            scaffoldState = scaffoldState,
-            sheetPeekHeight = 320.dp,
-            sheetContainerColor = Color.Transparent,
-            sheetContent = {
-                // === ISI SHEET (Putih) ===
-                Box(
+        // Gunakan Box untuk menumpuk gambar dan BottomSheetScaffold
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+
+            // 1. GAMBAR BACKGROUND (Di belakang Sheet)
+            AsyncImage(
+                model = recipe?.image,
+                contentDescription = recipe?.title ?: "",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp) // Tinggi gambar fixed
+                    .align(Alignment.TopCenter),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.chicsaladwrap)
+            )
+
+            // Tombol Navigasi Overlay (Back & Fav)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp) // Samakan tinggi dengan gambar
+            ) {
+                // Back Button
+                Image(
+                    painter = painterResource(id = R.drawable.back),
+                    contentDescription = "Back",
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF5CA135)),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.8f)
-                        .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
-                        .background(Color.White)
-                ) {
+                        .padding(start = 20.dp, top = 20.dp)
+                        .size(28.dp)
+                        .align(Alignment.TopStart)
+                        .clickable { navController.popBackStack() }
+                )
+
+                // Favorite Button
+                Image(
+                    painter = painterResource(
+                        id = if (isFav) R.drawable.new_love else R.drawable.heartmenudetails
+                    ),
+                    contentDescription = "Favorite",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 20.dp, top = 20.dp)
+                        .size(28.dp)
+                        .clickable {
+                            if (recipe != null) {
+                                val recipeModel = mapRecipeInfoToRecipe(recipe)
+                                favViewModel.toggleFavorite(recipeModel)
+                            }
+                        }
+                )
+            }
+
+            // 2. BOTTOM SHEET SCAFFOLD
+            // Gunakan backgroundColor Transparent agar gambar di belakang terlihat
+            BottomSheetScaffold(
+                scaffoldState = scaffoldState,
+                // ✅ Ubah sheetContainerColor menjadi warna Surface (Putih/Abu Gelap)
+                // Ini membuat handle drag menyatu dengan warna kartu
+                sheetContainerColor = MaterialTheme.colorScheme.surface,
+                sheetContentColor = MaterialTheme.colorScheme.onSurface,
+                sheetShadowElevation = 8.dp, // Bayangan agar sheet terlihat menimpa gambar
+                sheetPeekHeight = 350.dp, // ✅ Atur tinggi intipan agar pas di bawah gambar (sesuaikan jika perlu)
+                sheetShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+                // Background scaffold dibuat transparan agar gambar di `Box` induk terlihat
+                containerColor = Color.Transparent,
+                sheetContent = {
+                    // === ISI SHEET ===
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.9f) // Sheet bisa ditarik sampai 90% layar
                             .padding(horizontal = 24.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         // JUDUL MAKANAN
                         Text(
@@ -122,22 +172,20 @@ fun MenuDetailsPage(
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            color = Color.Black,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
 
                         // TOTAL CALORIES ROW
-                        Row(
-                            verticalAlignment = Alignment.Bottom
-                        ) {
+                        Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = "Total Calories",
                                 fontSize = 16.sp,
                                 fontFamily = SourceSans3,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Black,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(bottom = 3.dp)
                             )
                             Spacer(modifier = Modifier.width(20.dp))
@@ -146,17 +194,16 @@ fun MenuDetailsPage(
                                 fontSize = 16.sp,
                                 fontFamily = SourceSans3,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Black,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(bottom = 3.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-
                             Text(
                                 text = "kcal",
                                 fontSize = 12.sp,
                                 fontFamily = SourceSans3,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.Black
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -186,7 +233,7 @@ fun MenuDetailsPage(
                                 text = "${index + 1}. ${ing.original}",
                                 fontSize = 13.sp,
                                 fontFamily = SourceSans3,
-                                color = Color.Black,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(vertical = 2.dp)
                             )
                         }
@@ -213,14 +260,14 @@ fun MenuDetailsPage(
                                             fontSize = 14.sp,
                                             fontFamily = SourceSans3,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.Black
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = step.trim(),
                                             fontSize = 13.sp,
                                             fontFamily = SourceSans3,
                                             lineHeight = 18.sp,
-                                            color = Color(0xFF444444)
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                         )
                                     }
                                 }
@@ -256,62 +303,9 @@ fun MenuDetailsPage(
                         Spacer(modifier = Modifier.height(120.dp))
                     }
                 }
-            }
-        ) {
-            // === BODY (GAMBAR BACKGROUND) ===
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)
             ) {
-                AsyncImage(
-                    model = recipe?.image,
-                    contentDescription = recipe?.title ?: "",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(350.dp)
-                        .align(Alignment.TopCenter),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(R.drawable.chicsaladwrap)
-                )
-
-                // Tombol Navigasi Overlay
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Back Button
-                    Image(
-                        painter = painterResource(id = R.drawable.back),
-                        contentDescription = "Back",
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF5CA135)),
-                        modifier = Modifier
-                            .padding(start = 20.dp, top = 20.dp)
-                            .size(28.dp)
-                            .align(Alignment.TopStart)
-                            .clickable { navController.popBackStack() }
-                    )
-
-                    // ✅ Favorite Button Updated Logic
-                    Image(
-                        painter = painterResource(
-                            // Ganti ikon berdasarkan status isFav
-                            id = if (isFav) R.drawable.new_love else R.drawable.heartmenudetails
-                        ),
-                        contentDescription = "Favorite",
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(end = 20.dp, top = 20.dp)
-                            .size(28.dp)
-                            .clickable {
-                                // Logic Toggle Favorite
-                                if (recipe != null) {
-                                    // Kita butuh konversi dari RecipeInformation ke Recipe
-                                    val recipeModel = mapRecipeInfoToRecipe(recipe)
-                                    favViewModel.toggleFavorite(recipeModel)
-                                }
-                            }
-                    )
-                }
+                // Kosongkan content scaffold, karena kita pakai Box di luar untuk gambar
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
     }

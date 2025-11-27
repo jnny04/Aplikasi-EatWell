@@ -1,7 +1,11 @@
 package com.example.recappage.ui.screens
 
-import android.content.Intent // ✅ Import Intent
-import android.net.Uri // ✅ Import Uri
+import android.content.Intent
+import android.net.Uri
+import android.app.Activity
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -25,7 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext // ✅ Import LocalContext
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,12 +58,6 @@ import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
-import android.app.Activity
-import android.speech.RecognizerIntent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
 
 @Composable
 fun FoodLibraryPage(
@@ -68,7 +68,7 @@ fun FoodLibraryPage(
     favVM: FavouriteViewModel
 ) {
     val regViewModel: RegistrationViewModel = hiltViewModel()
-    val context = LocalContext.current // ✅ Simpan context untuk membuka link
+    val context = LocalContext.current
 
     val detail by viewModel.recipeDetail.collectAsState()
     val topCategories = listOf("All", "Breakfast", "Heavy Meal", "Snacks", "Dessert")
@@ -93,10 +93,10 @@ fun FoodLibraryPage(
             val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
 
             if (!spokenText.isNullOrBlank()) {
-                queryText = spokenText      // 1. Masukkan teks ke kolom
-                isSearchMode = true         // 2. Aktifkan mode cari
-                selectedTop = "All"         // 3. Reset kategori
-                viewModel.searchRecipesByKeyword(spokenText) // 4. Panggil API
+                queryText = spokenText
+                isSearchMode = true
+                selectedTop = "All"
+                viewModel.searchRecipesByKeyword(spokenText)
             }
         }
     }
@@ -142,7 +142,8 @@ fun FoodLibraryPage(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White),
+            // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
+            .background(MaterialTheme.colorScheme.background),
         topBar = {
             TopBorder(
                 navController = navController,
@@ -161,7 +162,8 @@ fun FoodLibraryPage(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
+                .background(MaterialTheme.colorScheme.background)
         ) {
 
             // 1. KATEGORI (LazyRow)
@@ -213,8 +215,8 @@ fun FoodLibraryPage(
                         .weight(1f)
                         .height(38.dp)
                         .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
-                        .background(Color.White, RoundedCornerShape(20.dp))
-                        // Hapus padding horizontal di Box induk agar kita bisa atur manual di dalam
+                        // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.surface (Agar search bar tidak silau di dark mode)
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
                         .padding(horizontal = 0.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -235,7 +237,8 @@ fun FoodLibraryPage(
                         onValueChange = { queryText = it },
                         singleLine = true,
                         textStyle = TextStyle(
-                            color = Color.Black,
+                            // ✅ GANTI: Color.Black -> MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             fontFamily = SourceSans3
                         ),
@@ -254,20 +257,19 @@ fun FoodLibraryPage(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 12.dp, end = 65.dp) // ⚠️ Padding kanan diperbesar agar teks tidak menabrak Mic
+                            .padding(start = 12.dp, end = 65.dp)
                     )
 
-                    // ✅ IKON MIKROFON (BARU)
+                    // IKON MIKROFON
                     Icon(
                         imageVector = Icons.Default.Mic,
                         contentDescription = "Voice Search",
                         tint = Color(0xFFFC7100),
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = 36.dp) // Posisi di sebelah kiri ikon search
+                            .padding(end = 36.dp)
                             .size(20.dp)
                             .clickable {
-                                // Panggil Google Voice Input
                                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Sebutkan resep...")
@@ -276,7 +278,7 @@ fun FoodLibraryPage(
                             }
                     )
 
-                    // Ikon Search (Lama)
+                    // Ikon Search
                     Image(
                         painter = painterResource(id = R.drawable.search_icon),
                         contentDescription = "Search",
@@ -390,7 +392,6 @@ fun FoodLibraryPage(
                 }
             }
 
-            // 4. POPUP PREVIEW (Tombol Order Di Sini)
             if (showPopup && selectedRecipe != null) {
                 FoodPreviewPopup(
                     image = selectedRecipe!!.image,
@@ -402,7 +403,6 @@ fun FoodLibraryPage(
                             Screen.MenuDetails.createRoute(selectedRecipe!!.id)
                         )
                     },
-                    // 🔥 PERBAIKAN: Isi logika order di sini
                     onOrderClick = {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
                         context.startActivity(intent)
@@ -421,22 +421,21 @@ fun RecipeCard(
     onSelect: () -> Unit
 ) {
     val isFav by remember { derivedStateOf { favVM.isFavorite(recipe) } }
-    val context = LocalContext.current // ✅ Context untuk membuka Grab
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
             .width(172.dp)
             .height(172.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF5F5F5))
+            // ✅ GANTI: Color(0xFFF5F5F5) -> MaterialTheme.colorScheme.surface
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         val context = LocalContext.current
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(recipe.image)
-                .crossfade(true) // Animasi transisi halus
-                // .placeholder(R.drawable.placeholder_loading) // (Opsional) Gambar saat loading
-                // .error(R.drawable.image_error) // (Opsional) Gambar jika gagal load
+                .crossfade(true)
                 .build(),
             contentDescription = recipe.title,
             contentScale = ContentScale.Crop,
@@ -455,15 +454,12 @@ fun RecipeCard(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
-            // 🔥 PERBAIKAN: Tombol Ojek di Kartu Grid
             Image(
                 painter = painterResource(id = R.drawable.ojek),
                 contentDescription = "Order Grab",
                 modifier = Modifier
                     .size(22.dp)
                     .clickable {
-                        // Buka Grab saat ikon motor diklik
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
                         context.startActivity(intent)
                     }
@@ -485,14 +481,17 @@ fun RecipeCard(
                 .fillMaxWidth()
                 .height(44.dp)
                 .align(Alignment.BottomCenter)
-                .background(Color.White.copy(alpha = 0.7f))
+                // ✅ GANTI: background Color.White -> MaterialTheme.colorScheme.surface
+                // Tambahkan alpha agar transparan di atas gambar
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
                 .zIndex(2f),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = recipe.title,
                 fontSize = 13.sp,
-                color = Color(0xFF333333),
+                // ✅ GANTI: Color(0xFF333333) -> MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -518,10 +517,13 @@ fun CategoryChip(
                 shape = RoundedCornerShape(50)
             )
             .clip(RoundedCornerShape(50))
-            .background(if (selected) Color(0xFFFC7100) else Color(0xFFD9D9D9))
+            // ✅ GANTI: if (!selected) Color(0xFFD9D9D9) -> MaterialTheme.colorScheme.surface
+            // Biarkan warna oranye (FC7100) tetap hardcode karena itu warna brand
+            .background(if (selected) Color(0xFFFC7100) else MaterialTheme.colorScheme.surface)
             .border(
                 width = if (selected) 2.dp else 1.dp,
-                color = if (selected) Color.White else Color(0xFFBFBFBF),
+                // ✅ GANTI: Color(0xFFBFBFBF) -> Color.Gray (Agar aman di kedua mode)
+                color = if (selected) Color.White else Color.Gray,
                 shape = RoundedCornerShape(50)
             )
             .clickable { onClick() },
@@ -532,7 +534,8 @@ fun CategoryChip(
             fontSize = 14.sp,
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.SemiBold,
-            color = if (selected) Color.White else Color.Black
+            // ✅ GANTI: if (!selected) Color.Black -> MaterialTheme.colorScheme.onSurface
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
         )
     }
 }

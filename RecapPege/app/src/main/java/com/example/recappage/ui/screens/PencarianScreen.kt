@@ -19,12 +19,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme // ✅ Import MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter // ✅ Import ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -74,7 +76,8 @@ fun PencarianScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 40.dp)
-            .background(Color.White)
+            // ✅ GANTI: Color.White -> background
+            .background(MaterialTheme.colorScheme.background)
     ) {
 
         /** 🔍 SEARCH BAR **/
@@ -85,11 +88,13 @@ fun PencarianScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.kri),
+                painter = painterResource(id = R.drawable.kri), // Icon panah back
                 contentDescription = null,
                 modifier = Modifier
                     .size(22.dp)
-                    .clickable { navController.popBackStack() }
+                    .clickable { navController.popBackStack() },
+                // ✅ GANTI: Tinting agar terlihat di Dark Mode
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -99,7 +104,8 @@ fun PencarianScreen(
                     .weight(1f)
                     .height(32.dp)
                     .border(2.dp, Color(0xFFFC7100), RoundedCornerShape(50))
-                    .background(Color.White, RoundedCornerShape(50))
+                    // ✅ GANTI: Color.White -> surface
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
             ) {
                 BasicTextField(
                     value = query,
@@ -109,7 +115,8 @@ fun PencarianScreen(
                     },
                     singleLine = true,
                     textStyle = TextStyle(
-                        color = Color.Black,
+                        // ✅ GANTI: Color.Black -> onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         fontFamily = SourceSans3
                     ),
@@ -132,7 +139,8 @@ fun PencarianScreen(
                             Text(
                                 text = "Got something on your mind?",
                                 fontSize = 10.sp,
-                                color = Color.Gray,
+                                // ✅ GANTI: Color.Gray -> onSurface (alpha 0.6)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 fontFamily = SourceSans3,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -160,7 +168,7 @@ fun PencarianScreen(
                         }
                 )
 
-                // ICON SEARCH (Lama)
+                // ICON SEARCH
                 Image(
                     painter = painterResource(id = R.drawable.search_icon),
                     contentDescription = null,
@@ -173,7 +181,9 @@ fun PencarianScreen(
                                 viewModel.saveSearchHistory(query)
                                 navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
-                        }
+                        },
+                    // ✅ GANTI: Tinting agar terlihat di Dark Mode
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                 )
             }
         }
@@ -203,7 +213,9 @@ fun PencarianScreen(
                         Image(
                             painter = painterResource(id = R.drawable.history),
                             contentDescription = "History",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            // ✅ GANTI: Tinting agar terlihat di Dark Mode
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
@@ -211,7 +223,8 @@ fun PencarianScreen(
                             fontFamily = SourceSerifPro,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Normal,
-                            color = Color.Black
+                            // ✅ GANTI: Color.Black -> onBackground
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 }
@@ -238,7 +251,9 @@ fun PencarianScreen(
                             Image(
                                 painter = painterResource(id = R.drawable.searchsuggestion),
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(20.dp),
+                                // ✅ GANTI: Tinting agar terlihat di Dark Mode
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(
@@ -246,7 +261,8 @@ fun PencarianScreen(
                                 fontFamily = SourceSerifPro,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Normal,
-                                color = Color.Black,
+                                // ✅ GANTI: Color.Black -> onBackground
+                                color = MaterialTheme.colorScheme.onBackground,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -277,6 +293,8 @@ fun PencarianScreen(
                                     recipe.title,
                                     fontFamily = SourceSans3,
                                     fontSize = 12.sp,
+                                    // ✅ GANTI: Default color -> onBackground
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.padding(vertical = 6.dp)
                                 )
                             }
@@ -286,7 +304,8 @@ fun PencarianScreen(
                         Text("No results found.", color = Color.Red, fontSize = 12.sp)
                     }
                     is NetworkResult.Loading -> {
-                        Text("Searching...", color = Color.Gray, fontSize = 12.sp)
+                        // ✅ GANTI: Color.Gray -> onBackground (alpha)
+                        Text("Searching...", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 12.sp)
                     }
                     null -> {}
                 }

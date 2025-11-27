@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll // ✅ Import ini penting
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -78,7 +78,8 @@ fun IntakeDetailPage(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // === Konten Utama ===
         Column(
@@ -94,7 +95,8 @@ fun IntakeDetailPage(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = serifBold,
-                color = Color.Black
+                // ✅ GANTI: Color.Black -> MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -103,7 +105,8 @@ fun IntakeDetailPage(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Total Calories", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
+                // ✅ GANTI: Color.Black (Default) -> onBackground (agar terlihat di dark mode)
+                Text("Total Calories", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(Modifier.height(1.dp))
 
                 Row(
@@ -132,7 +135,8 @@ fun IntakeDetailPage(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Details", fontSize = 10.sp, fontFamily = serifFont, color = Color.Gray, modifier = Modifier.fillMaxWidth().padding(start = 4.dp))
+            // ✅ GANTI: Color.Gray -> onSurface (alpha 0.6)
+            Text("Details", fontSize = 10.sp, fontFamily = serifFont, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.fillMaxWidth().padding(start = 4.dp))
             Spacer(modifier = Modifier.height(2.dp))
 
             // === DETAILS MACRO ===
@@ -143,16 +147,20 @@ fun IntakeDetailPage(
             }
 
             Spacer(Modifier.height(35.dp))
-            Divider(color = Color.Black.copy(alpha = 0.12f), thickness = 1.dp, modifier = Modifier.fillMaxWidth())
+            // ✅ GANTI: Color.Black.copy -> onSurface.copy
+            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), thickness = 1.dp, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(24.dp))
 
             // Log Manually Section
-            Text("Log Manually", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
-            Text("Didn't find it on our menu? Add your today's intake manually here!", fontSize = 10.sp, color = Color.Gray)
+            // ✅ GANTI: Color default -> onBackground
+            Text("Log Manually", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold, color = MaterialTheme.colorScheme.onBackground)
+            // ✅ GANTI: Color.Gray -> onSurface (alpha 0.6)
+            Text("Didn't find it on our menu? Add your today's intake manually here!", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(12.dp))
 
             // Menu Input
-            Text("Menu", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = serifBold)
+            // ✅ GANTI: Color default -> onBackground
+            Text("Menu", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = serifBold, color = MaterialTheme.colorScheme.onBackground)
             val isFilled = menu.trim().isNotEmpty()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 val fieldWidth = 220.dp
@@ -161,16 +169,19 @@ fun IntakeDetailPage(
                         value = menu,
                         onValueChange = { menu = it },
                         singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, fontFamily = serifFont, color = Color.Black),
+                        // ✅ GANTI: Color.Black -> onSurface
+                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, fontFamily = serifFont, color = MaterialTheme.colorScheme.onSurface),
                         modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
                         decorationBox = { inner ->
                             Box {
-                                if (menu.isBlank()) Text("Type menu name", fontSize = 12.sp, fontFamily = serifFont, color = Color.Black.copy(alpha = 0.35f))
+                                // ✅ GANTI: Color.Black.copy -> onSurface.copy
+                                if (menu.isBlank()) Text("Type menu name", fontSize = 12.sp, fontFamily = serifFont, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f))
                                 inner()
                             }
                         }
                     )
-                    Divider(color = Color.Black.copy(alpha = 0.6f), thickness = 1.3.dp, modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth())
+                    // ✅ GANTI: Color.Black.copy -> onSurface.copy
+                    Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), thickness = 1.3.dp, modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth())
                 }
                 Spacer(Modifier.width(6.dp))
                 Image(painter = painterResource(id = if (isFilled) R.drawable.okkay_green else R.drawable.okkay), contentDescription = null, modifier = Modifier.size(20.dp))
@@ -204,7 +215,8 @@ fun IntakeDetailPage(
                     modifier = Modifier
                         .width(100.dp)
                         .height(50.dp)
-                        .border(1.5.dp, Color.Black, RoundedCornerShape(12.dp)),
+                        // ✅ GANTI: Color.Black -> onSurface (untuk border)
+                        .border(1.5.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -212,7 +224,8 @@ fun IntakeDetailPage(
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = serifBold,
-                        color = Color.Black
+                        // ✅ GANTI: Color.Black -> onSurface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -224,7 +237,8 @@ fun IntakeDetailPage(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = SourceSans3,
-                    color = Color.Black,
+                    // ✅ GANTI: Color.Black -> onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
             }
@@ -293,11 +307,13 @@ fun IntakeDetailPage(
 @Composable
 fun MacroInput(label: String, value: String, onValueChange: (String) -> Unit, accent: Color, fontFamily: FontFamily) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(100.dp)) {
-        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFamily = fontFamily, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().offset(x = if (label != "Carbohydrates") (-7).dp else 0.dp))
+        // ✅ GANTI: default color -> onBackground
+        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, fontFamily = fontFamily, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.fillMaxWidth().offset(x = if (label != "Carbohydrates") (-7).dp else 0.dp))
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.width(60.dp).height(34.dp).border(1.5.dp, accent, RoundedCornerShape(8.dp)).padding(horizontal = 6.dp, vertical = 4.dp), contentAlignment = Alignment.Center) {
-                BasicTextField(value = value, onValueChange = onValueChange, singleLine = true, textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, fontFamily = fontFamily, color = Color.Black, textAlign = TextAlign.Center), modifier = Modifier.fillMaxWidth())
+                // ✅ GANTI: Color.Black -> onSurface
+                BasicTextField(value = value, onValueChange = onValueChange, singleLine = true, textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, fontFamily = fontFamily, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center), modifier = Modifier.fillMaxWidth())
             }
             Spacer(Modifier.width(4.dp))
             Text("g", fontSize = 12.sp, fontFamily = fontFamily, color = accent, modifier = Modifier.offset(y = 9.dp))
@@ -308,9 +324,11 @@ fun MacroInput(label: String, value: String, onValueChange: (String) -> Unit, ac
 @Composable
 fun MacroItem(title: String, value: String, iconRes: Int, valueColor: Color, fontFamily: FontFamily) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = fontFamily)
+        // ✅ GANTI: default color -> onBackground
+        Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, fontFamily = fontFamily, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(6.dp))
-        Image(painter = painterResource(id = iconRes), contentDescription = title, modifier = Modifier.size(36.dp), colorFilter = ColorFilter.tint(Color.Black))
+        // ✅ GANTI: Color.Black -> onSurface
+        Image(painter = painterResource(id = iconRes), contentDescription = title, modifier = Modifier.size(36.dp), colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface))
         Spacer(Modifier.height(6.dp))
         Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, fontFamily = fontFamily, color = valueColor)
     }

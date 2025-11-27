@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -31,7 +32,7 @@ import com.example.recappage.R
 import com.example.recappage.model.Recipe
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
-import com.example.recappage.ui.navigation.Screen // ✅ Import Screen untuk navigasi
+import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 
@@ -53,7 +54,6 @@ fun FavouritePage(
     }
     val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // ✅ GUNAKAN SCAFFOLD AGAR LAYOUT RAPI & TIDAK TEMBUS
     Scaffold(
         topBar = {
             TopBorder(
@@ -64,7 +64,7 @@ fun FavouritePage(
         bottomBar = {
             Component18(navController = navController)
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
 
         LazyVerticalGrid(
@@ -72,9 +72,9 @@ fun FavouritePage(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp), // Padding kanan kiri container
+            verticalArrangement = Arrangement.spacedBy(16.dp), // Jarak atas-bawah antar item
+            horizontalArrangement = Arrangement.spacedBy(16.dp) // Jarak kanan-kiri antar item
         ) {
             // 1. HEADER (Judul Halaman)
             item(span = { GridItemSpan(2) }) {
@@ -88,7 +88,7 @@ fun FavouritePage(
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = serifBold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onBackground
                         )
 
                         Spacer(Modifier.width(8.dp))
@@ -124,7 +124,6 @@ fun FavouritePage(
                     FavouriteRecipeCard(
                         recipe = recipe,
                         favVM = favVM,
-                        // ✅ PERBAIKAN: Navigasi ke MenuDetailsPage saat diklik
                         onClick = {
                             navController.navigate(Screen.MenuDetails.createRoute(recipe.id))
                         }
@@ -134,7 +133,7 @@ fun FavouritePage(
 
             // Spacer bawah tambahan agar tidak terlalu mepet bottom bar
             item(span = { GridItemSpan(2) }) {
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(90.dp))
             }
         }
     }
@@ -144,14 +143,17 @@ fun FavouritePage(
 fun FavouriteRecipeCard(
     recipe: Recipe,
     favVM: FavouriteViewModel,
-    onClick: () -> Unit // ✅ Tambahkan parameter onClick
+    onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
-            .requiredSize(182.dp)
+            // ❌ HAPUS: .requiredSize(182.dp) -> Ini penyebab dempet
+            // ✅ GANTI DENGAN INI:
+            .fillMaxWidth() // Mengisi lebar kolom yang tersedia
+            .height(182.dp) // Tinggi tetap agar rapi
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xffd9d9d9))
-            .clickable { onClick() } // ✅ Panggil onClick saat Box diklik
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable { onClick() }
     ) {
         AsyncImage(
             model = recipe.image,
@@ -168,13 +170,14 @@ fun FavouriteRecipeCard(
                 .fillMaxWidth()
                 .height(44.dp)
                 .align(Alignment.BottomCenter)
-                .background(Color.White.copy(alpha = 0.7f)),
+                // Background transparan menyesuaikan tema
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = recipe.title,
                 fontSize = 13.sp,
-                color = Color(0xFF333333),
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -193,7 +196,6 @@ fun FavouriteRecipeCard(
                 .padding(10.dp)
                 .size(25.dp)
                 .clickable {
-                    // Klik hati HANYA toggle favorite, tidak navigasi
                     favVM.toggleFavorite(recipe)
                 },
             contentScale = ContentScale.Fit

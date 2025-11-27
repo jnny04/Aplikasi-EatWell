@@ -114,7 +114,7 @@ fun ProfileScreen(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
-                        Text("×", fontSize = 22.sp, color = Color(0xFF555555))
+                        Text("×", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     }
                 }
 
@@ -183,8 +183,7 @@ fun ProfileScreen(
                     // Username
                     Text(
                         text = regViewModel.username.value,
-                        color = Color.Black,
-                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurface,                        fontSize = 20.sp,
                         fontFamily = serifBold,
                         modifier = Modifier.align(Alignment.BottomStart).padding(start = 32.dp, bottom = 50.dp)
                     )
@@ -192,7 +191,7 @@ fun ProfileScreen(
                     // Streak
                     Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 28.dp)) {
                         Image(painter = painterResource(id = R.drawable.streak), contentDescription = null, modifier = Modifier.size(150.dp))
-                        Text(text = "$streakDays days", color = Color(0xFF555555), fontSize = 20.sp, modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-30).dp))
+                        Text(text = "$streakDays days", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 20.sp, modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-30).dp))
                     }
                 }
 
@@ -206,7 +205,7 @@ fun ProfileScreen(
                         .fillMaxWidth()
                         .shadow(2.dp, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 12.dp, vertical = 10.dp)
                 ) {
                     // 1. Email (Input Biasa)
@@ -313,10 +312,10 @@ fun ProfileScreen(
                     TextButton(
                         onClick = { regViewModel.showDeleteDialog.value = false }
                     ) {
-                        Text("Cancel", color = Color.Black)
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface,)
                     }
                 },
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             )
         }
 
@@ -342,8 +341,7 @@ private fun EditableField(
     Column {
         Text(
             text = label,
-            color = Color(0xFF2E7D32),
-            fontFamily = fontLabel,
+            color = MaterialTheme.colorScheme.primary,            fontFamily = fontLabel,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
@@ -354,7 +352,7 @@ private fun EditableField(
             textStyle = TextStyle(
                 fontFamily = SourceSans3, // ✅ Pakai langsung
                 fontSize = 16.sp,
-                color = Color(0xFF444444)
+                color = MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier
                 .padding(vertical = 6.dp)
@@ -380,7 +378,7 @@ private fun SuffixEditableField(
     Column {
         Text(
             text = label,
-            color = Color(0xFF2E7D32),
+            color = MaterialTheme.colorScheme.primary,
             fontFamily = fontLabel,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
@@ -403,7 +401,7 @@ private fun SuffixEditableField(
                 textStyle = TextStyle(
                     fontFamily = SourceSans3,
                     fontSize = 16.sp,
-                    color = Color(0xFF444444)
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 // ✅ PENTING: IntrinsicSize.Min atau wrapContent agar tidak serakah tempat
                 modifier = Modifier.width(IntrinsicSize.Min)
@@ -415,7 +413,7 @@ private fun SuffixEditableField(
                 style = TextStyle(
                     fontFamily = SourceSans3,
                     fontSize = 16.sp,
-                    color = Color(0xFF444444)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -439,7 +437,7 @@ private fun GenderDropdownField(
     Column {
         Text(
             text = label,
-            color = Color(0xFF2E7D32),
+            color = MaterialTheme.colorScheme.primary,
             fontFamily = fontLabel,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
@@ -461,21 +459,20 @@ private fun GenderDropdownField(
                     style = TextStyle(
                         fontFamily = SourceSans3, // ✅ Pakai langsung
                         fontSize = 16.sp,
-                        color = Color(0xFF444444)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 )
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = Color(0xFF444444)
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
 
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
-            ) {
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)            ) {
                 DropdownMenuItem(
                     text = { Text("Male", fontFamily = SourceSans3) }, // ✅ Pakai langsung
                     onClick = {

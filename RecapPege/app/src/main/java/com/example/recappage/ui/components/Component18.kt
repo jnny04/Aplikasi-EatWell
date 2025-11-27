@@ -122,7 +122,7 @@ fun Component18(
 
                 // MY RECAP
                 NavItem(
-                    label = "My Recap",
+                    label = "Food Diary",
                     iconOn = R.drawable.recap,
                     iconOff = R.drawable.recapoff,
                     isSelected = isRecapSelected

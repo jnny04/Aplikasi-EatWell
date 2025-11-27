@@ -9,10 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.* // ✅ Import MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +23,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign // ✅ Import TextAlign
-import androidx.compose.ui.text.style.TextOverflow // ✅ Import TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -72,7 +69,8 @@ fun MonthlyRecapPage(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // === Konten utama ===
         Column(modifier = Modifier.fillMaxSize()) {
@@ -82,7 +80,8 @@ fun MonthlyRecapPage(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = serifBold,
-                    color = Color.Black
+                    // ✅ GANTI: Color.Black -> onBackground
+                    color = MaterialTheme.colorScheme.onBackground
                 ),
                 modifier = Modifier.padding(start = 16.dp, top = 118.dp)
             )
@@ -90,13 +89,13 @@ fun MonthlyRecapPage(
             // Baris Dropdown & Download
             Row(
                 modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp)
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Dropdown bulan
-                Column {
+                // Dropdown bulan (Mengambil ruang sisa agar tombol download aman)
+                Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable { expanded = true }
@@ -122,7 +121,8 @@ fun MonthlyRecapPage(
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        modifier = Modifier.background(Color.White)
+                        // ✅ GANTI: Color.White -> surface
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                     ) {
                         months.forEach { month ->
                             val isSelected = month == selectedMonth
@@ -149,23 +149,25 @@ fun MonthlyRecapPage(
                     }
                 }
 
-                // Tombol Download
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable {
-                        if (monthlyList.isEmpty()) {
-                            android.widget.Toast.makeText(context, "No data to download", android.widget.Toast.LENGTH_SHORT).show()
-                            return@clickable
-                        }
-                        isDownloading = true
-                        downloadComplete = false
-                        progress = 0
-                    }
+                // Tombol Download (Fixed Size agar tidak terpotong)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp) // Ukuran touch target yang aman
+                        .clickable {
+                            if (monthlyList.isEmpty()) {
+                                android.widget.Toast.makeText(context, "No data to download", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                isDownloading = true
+                                downloadComplete = false
+                                progress = 0
+                            }
+                        },
+                    contentAlignment = Alignment.CenterEnd // Rata kanan
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.download),
                         contentDescription = "Download",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(40.dp) // Ukuran ikon
                     )
                 }
             }
@@ -180,7 +182,8 @@ fun MonthlyRecapPage(
                 ) {
                     Text(
                         text = "No data for this month.",
-                        color = Color.Gray,
+                        // ✅ GANTI: Color.Gray -> onSurface (alpha 0.6)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontFamily = serifFont
                     )
                 }
@@ -190,18 +193,22 @@ fun MonthlyRecapPage(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier
-                        .padding(top = 20.dp, start = 16.dp, end = 16.dp, bottom = 90.dp)
+                        .padding(top = 20.dp, start = 16.dp, end = 16.dp)
                         .fillMaxWidth()
-                        .weight(1f)
+                        .weight(1f),
+                    // ✅ PENTING: Tambahkan padding bawah untuk konten list agar tidak tertutup nav bar
+                    contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     items(monthlyList) { item ->
-                        // Card Item Makanan (Format baru)
+                        // Card Item Makanan (Format Responsif)
                         Box(
                             modifier = Modifier
+                                // ✅ PERBAIKAN GRID: Gunakan fillMaxWidth + height tetap
                                 .fillMaxWidth()
                                 .height(182.dp)
-                                .clip(RoundedCornerShape(12.dp)) // ✅ Radius 12.dp
-                                .background(Color(0xffd9d9d9))
+                                .clip(RoundedCornerShape(12.dp))
+                                // ✅ GANTI: Color(0xffd9d9d9) -> surface
+                                .background(MaterialTheme.colorScheme.surface)
                         ) {
                             // Gambar Makanan
                             if (item.imageUrl != null) {
@@ -213,25 +220,28 @@ fun MonthlyRecapPage(
                                 )
                             }
 
-                            // Box Text di Bawah (Format baru)
+                            // Box Text di Bawah
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(44.dp) // ✅ Tinggi 44.dp
+                                    .height(44.dp)
                                     .align(Alignment.BottomCenter)
-                                    .background(Color.White.copy(alpha = 0.7f)), // ✅ Putih Transparan 0.7f
-                                contentAlignment = Alignment.Center // ✅ Teks di tengah
+                                    // ✅ GANTI: Color.White.copy -> surface.copy
+                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = item.name,
-                                    fontSize = 13.sp,           // ✅ 13.sp
-                                    color = Color(0xFF333333),  // ✅ Abu gelap
+                                    fontSize = 13.sp,
+                                    // ✅ GANTI: Color(0xFF333333) -> onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Medium,
                                     fontFamily = serifFont,
-                                    textAlign = TextAlign.Center, // ✅ Rata tengah
+                                    textAlign = TextAlign.Center,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    lineHeight = 16.sp
+                                    lineHeight = 16.sp,
+                                    modifier = Modifier.padding(horizontal = 4.dp)
                                 )
                             }
                         }

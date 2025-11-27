@@ -14,6 +14,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme // ✅ Import MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,7 +75,8 @@ fun IntakeRecapPageWeekly(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            // ✅ GANTI: Color.White -> background
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // === HEADER ===
         // ✅ 3. Teruskan URL ke TopBorder
@@ -85,7 +87,8 @@ fun IntakeRecapPageWeekly(
 
         Text(
             text = "My Intake",
-            color = Color.Black,
+            // ✅ GANTI: Color.Black -> onBackground
+            color = MaterialTheme.colorScheme.onBackground,
             style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold),
             modifier = Modifier.align(Alignment.TopStart).offset(x = 16.dp, y = 118.dp)
         )
@@ -114,7 +117,8 @@ fun IntakeRecapPageWeekly(
             Image(
                 painter = painterResource(id = R.drawable.iconamoonhistoryfill),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(Color.Black),
+                // ✅ GANTI: Color.Black -> onBackground
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                 modifier = Modifier.requiredSize(20.dp)
             )
 
@@ -122,7 +126,8 @@ fun IntakeRecapPageWeekly(
 
             Text(
                 text = currentMode,
-                color = Color.Black,
+                // ✅ GANTI: Color.Black -> onBackground
+                color = MaterialTheme.colorScheme.onBackground,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold)
             )
 
@@ -130,13 +135,15 @@ fun IntakeRecapPageWeekly(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Select Period",
                 modifier = Modifier.size(24.dp),
-                tint = Color.Black
+                // ✅ GANTI: Color.Black -> onBackground
+                tint = MaterialTheme.colorScheme.onBackground
             )
 
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
+                // ✅ GANTI: Color.White -> surface
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
             ) {
                 DropdownMenuItem(
                     text = { Text("Today", fontFamily = serifFont) },
@@ -156,7 +163,8 @@ fun IntakeRecapPageWeekly(
         }
 
         // Calories Taken Text
-        Text(text = "Calories Taken", color = Color.Black, textAlign = TextAlign.Center, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold), modifier = Modifier.align(Alignment.TopStart).offset(x = 150.dp, y = 201.dp))
+        // ✅ GANTI: Color.Black -> onBackground
+        Text(text = "Calories Taken", color = MaterialTheme.colorScheme.onBackground, textAlign = TextAlign.Center, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = serifBold), modifier = Modifier.align(Alignment.TopStart).offset(x = 150.dp, y = 201.dp))
 
         // === TOTAL CALORIES DISPLAY ===
         Row(
@@ -194,13 +202,16 @@ fun IntakeRecapPageWeekly(
 
         // See details
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.TopStart).offset(x = 16.dp, y = 334.dp).padding(bottom = 25.dp).clickable { navController.navigate(Screen.IntakeDetail.route) }.zIndex(1f)) {
-            Text(text = "See details", color = Color(0xff555555), textDecoration = TextDecoration.Underline, fontSize = 10.sp)
-            Image(painter = painterResource(id = R.drawable.materialsymbolsdoublearrowrounded), contentDescription = null, colorFilter = ColorFilter.tint(Color(0xff555555)), modifier = Modifier.requiredSize(12.dp))
+            // ✅ GANTI: Color(0xff555555) -> onSurface (alpha 0.7)
+            Text(text = "See details", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), textDecoration = TextDecoration.Underline, fontSize = 10.sp)
+            // ✅ GANTI: Tint -> onSurface (alpha 0.7)
+            Image(painter = painterResource(id = R.drawable.materialsymbolsdoublearrowrounded), contentDescription = null, colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)), modifier = Modifier.requiredSize(12.dp))
         }
 
         // Divider vertikal
         HorizontalDivider(
-            color = Color.Black.copy(alpha = 0.3f),
+            // ✅ GANTI: Color.Black.copy -> onBackground.copy
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset(x = 397.dp, y = 361.dp)
@@ -213,7 +224,8 @@ fun IntakeRecapPageWeekly(
             Text(
                 text = if (currentMode == "Today") "No intake logged today." else "No intake logged this week.",
                 modifier = Modifier.align(Alignment.Center).offset(y = 50.dp),
-                color = Color.Gray,
+                // ✅ GANTI: Color.Gray -> onSurface (alpha 0.5)
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 fontFamily = serifFont
             )
         } else {
@@ -253,7 +265,8 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
                 .height(130.dp)
                 .shadow(4.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF0F0F0))
+                // ✅ GANTI: Color(0xFFF0F0F0) -> surface
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             if (entry.imageUrl != null) {
                 AsyncImage(
@@ -272,7 +285,8 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
             fontFamily = serifBold,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
-            color = Color.Black,
+            // ✅ GANTI: Color.Black -> onSurface
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2, // ✅ Ubah jadi 2 baris (sebelumnya 1)
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, // ✅ Tambah titik-titik (...) jika masih kepanjangan
             lineHeight = 18.sp // ✅ Atur jarak antar baris agar rapi
