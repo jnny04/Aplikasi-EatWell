@@ -277,17 +277,14 @@ fun SpinWheelSection(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
 
-    // State Rotasi untuk Animasi
+    // State Rotasi
     var rotationValue by remember { mutableFloatStateOf(0f) }
 
-    // Logika Spin (Klik & Shake)
+    // Logika Spin
     val performSpin = {
         if (!spinning && !showResult) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-
-            // Putar acak (minimal 2 putaran penuh + acak)
             rotationValue += (720..1800).random().toFloat()
-
             spinning = true
             recViewModel.spin(dietary)
 
@@ -303,7 +300,6 @@ fun SpinWheelSection(
         }
     }
 
-    // Sensor Shake
     val shakeDetector = remember { ShakeDetector(context) }
     DisposableEffect(Unit) {
         shakeDetector.start { performSpin() }
@@ -311,21 +307,22 @@ fun SpinWheelSection(
     }
 
     // ==========================================
-    // LAYOUT UTAMA (BOX BESAR)
+    // LAYOUT UTAMA
     // ==========================================
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(420.dp) // Berikan tinggi pasti agar tidak sempit
+            // 1. KURANGI TINGGI BOX (Supaya tidak terlalu makan tempat ke bawah)
+            // Dari 420.dp -> 380.dp
+            .height(380.dp)
     ) {
 
-        // 1. BAGIAN KIRI ATAS: MY DIETARY
+        // 1. BAGIAN KIRI ATAS: MY DIETARY & TEXT
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 24.dp, top = 30.dp)
+                .padding(start = 24.dp, top = 20.dp) // Padding top disesuaikan
         ) {
-            // Tombol Hijau
             Box(
                 modifier = Modifier
                     .width(130.dp)
@@ -344,9 +341,8 @@ fun SpinWheelSection(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.width(6.dp))
-                    // Ikon Panah (gunakan resource yang ada atau ikon vektor)
                     Image(
-                        painter = painterResource(id = R.drawable.downarrow), // Pastikan ada, atau ganti icon lain
+                        painter = painterResource(id = R.drawable.downarrow),
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         colorFilter = ColorFilter.tint(Color.White)
@@ -356,7 +352,6 @@ fun SpinWheelSection(
 
             Spacer(Modifier.height(8.dp))
 
-            // Teks Helper Hijau
             Text(
                 "Hungry but can’t decide? Tap\nhere to discover options!",
                 fontFamily = SourceSans3,
@@ -366,15 +361,17 @@ fun SpinWheelSection(
             )
         }
 
-        // 2. BAGIAN TENGAH BAWAH: RODA PUTAR (SpinWheel)
+        // 2. BAGIAN TENGAH BAWAH: RODA PUTAR
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter) // Tempel ke bawah Box
-                .padding(bottom = 10.dp),      // Sedikit jarak dari bawah
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             SpinWheel(
-                modifier = Modifier.size(340.dp), // 🔥 UKURAN BESAR (340dp)
+                // 2. PERKECIL UKURAN RODA
+                // Dari 340.dp -> 290.dp (Agar tidak nabrak teks)
+                modifier = Modifier.size(290.dp),
                 rotationTarget = rotationValue,
                 onClick = { performSpin() }
             )
@@ -383,17 +380,18 @@ fun SpinWheelSection(
         // 3. BAGIAN KANAN ATAS: BUBBLE "SPIN ME!"
         Image(
             painter = painterResource(
-                id = if (spinning) R.drawable.spin2 else R.drawable.spin // Pastikan ini gambar bubble
+                id = if (spinning) R.drawable.spin2 else R.drawable.spin
             ),
             contentDescription = "Spin Me",
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 30.dp, top = 80.dp) // Posisi di "jam 2" roda
-                .size(90.dp)
+                // 3. SESUAIKAN POSISI BUBBLE
+                // top dinaikkan ke 100.dp agar pas dengan roda yang mengecil
+                .padding(end = 40.dp, top = 100.dp)
+                .size(80.dp)
         )
     }
 
-    // Filter Sheet Logic (Tetap sama)
     if (showFilterSheet) {
         com.example.recappage.ui.components.FilterDialog(
             onDismiss = { showFilterSheet = false },
@@ -402,7 +400,22 @@ fun SpinWheelSection(
                     buildString {
                         if (selected.vegan) append("vegan,")
                         if (selected.vegetarian) append("vegetarian,")
-                        // ... (lanjutkan logika filter yang lama) ...
+                        if (selected.halal) append("halal,")
+                        if (selected.lowCarb) append("low carb,")
+                        if (selected.pescatarian) append("pescatarian,")
+                        if (selected.nutsFree) append("nuts-free,")
+                        if (selected.dairyFree) append("dairy-free,")
+                        if (selected.glutenFree) append("gluten-free,")
+                        if (selected.eggFree) append("egg-free,")
+                        if (selected.noSeafood) append("no-seafood,")
+                        if (selected.asian) append("asian,")
+                        if (selected.european) append("european,")
+                        if (selected.thai) append("thai,")
+                        if (selected.chinese) append("chinese,")
+                        if (selected.korean) append("korean,")
+                        if (selected.japanese) append("japanese,")
+                        if (selected.italian) append("italian,")
+                        if (selected.indian) append("indian,")
                     }.removeSuffix(",")
                 )
                 showFilterSheet = false
