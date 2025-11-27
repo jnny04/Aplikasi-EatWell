@@ -39,7 +39,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // UBAH DARI false MENJADI true
+            isMinifyEnabled = true  // <--- Ini wajib true jika isShrinkResources true
+
             isShrinkResources = true
 
             proguardFiles(
@@ -48,7 +50,6 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -65,13 +66,7 @@ android {
         // dataBinding can be removed if you are only using Compose
     }
     composeOptions {
-        // REMOVE this line. The Compose BOM will manage the compiler version for you.
-        // kotlinCompilerExtensionVersion = "1.5.11"
     }
-    // REMOVE this block. It's for kapt, which we are no longer using.
-    // kapt {
-    //     correctErrorTypes = true
-    // }
 }
 
 dependencies {

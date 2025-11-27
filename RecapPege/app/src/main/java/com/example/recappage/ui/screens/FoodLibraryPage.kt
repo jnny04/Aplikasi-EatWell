@@ -37,6 +37,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.recappage.R
 import com.example.recappage.model.Recipe
 import com.example.recappage.ui.components.Component18
@@ -51,6 +52,12 @@ import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
+import android.app.Activity
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 
 @Composable
 fun FoodLibraryPage(
@@ -79,6 +86,20 @@ fun FoodLibraryPage(
     }
 
     var queryText by remember { mutableStateOf(decodedQuery ?: "") }
+    val voiceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+
+            if (!spokenText.isNullOrBlank()) {
+                queryText = spokenText      // 1. Masukkan teks ke kolom
+                isSearchMode = true         // 2. Aktifkan mode cari
+                selectedTop = "All"         // 3. Reset kategori
+                viewModel.searchRecipesByKeyword(spokenText) // 4. Panggil API
+            }
+        }
+    }
 
     val paginatedRecipes = viewModel.paginatedRecipes
     val isPaginating = viewModel.isPaginating
@@ -193,17 +214,22 @@ fun FoodLibraryPage(
                         .height(38.dp)
                         .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
                         .background(Color.White, RoundedCornerShape(20.dp))
-                        .padding(horizontal = 12.dp),
+                        // Hapus padding horizontal di Box induk agar kita bisa atur manual di dalam
+                        .padding(horizontal = 0.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
+                    // Placeholder Text
                     if (queryText.isEmpty()) {
                         Text(
                             text = "Search recipes...",
                             color = Color.Gray,
                             fontSize = 12.sp,
-                            fontFamily = SourceSans3
+                            fontFamily = SourceSans3,
+                            modifier = Modifier.padding(start = 12.dp)
                         )
                     }
+
+                    // Input Text
                     BasicTextField(
                         value = queryText,
                         onValueChange = { queryText = it },
@@ -228,13 +254,35 @@ fun FoodLibraryPage(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(end = 24.dp)
+                            .padding(start = 12.dp, end = 65.dp) // ⚠️ Padding kanan diperbesar agar teks tidak menabrak Mic
                     )
+
+                    // ✅ IKON MIKROFON (BARU)
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Voice Search",
+                        tint = Color(0xFFFC7100),
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 36.dp) // Posisi di sebelah kiri ikon search
+                            .size(20.dp)
+                            .clickable {
+                                // Panggil Google Voice Input
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Sebutkan resep...")
+                                }
+                                voiceLauncher.launch(intent)
+                            }
+                    )
+
+                    // Ikon Search (Lama)
                     Image(
                         painter = painterResource(id = R.drawable.search_icon),
                         contentDescription = "Search",
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
                             .size(16.dp)
                             .clickable {
                                 if (queryText.isNotEmpty()) {
@@ -250,7 +298,7 @@ fun FoodLibraryPage(
                     painter = painterResource(id = filterIcon),
                     contentDescription = "Filter",
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(30.dp)
                         .clickable { showFilterPopup = true }
                 )
             }
@@ -382,9 +430,14 @@ fun RecipeCard(
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFFF5F5F5))
     ) {
-
+        val context = LocalContext.current
         AsyncImage(
-            model = recipe.image,
+            model = ImageRequest.Builder(context)
+                .data(recipe.image)
+                .crossfade(true) // Animasi transisi halus
+                // .placeholder(R.drawable.placeholder_loading) // (Opsional) Gambar saat loading
+                // .error(R.drawable.image_error) // (Opsional) Gambar jika gagal load
+                .build(),
             contentDescription = recipe.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier

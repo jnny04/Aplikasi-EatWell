@@ -1,5 +1,10 @@
 package com.example.recappage.ui.screens
 
+import android.app.Activity
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,7 +16,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -31,7 +38,7 @@ import com.example.recappage.R
 import com.example.recappage.model.FoodRecipes
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.theme.SourceSans3
-import com.example.recappage.ui.theme.SourceSerifPro // ✅ Pastikan import ini ada
+import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.SearchViewModel
 import com.example.recappage.util.NetworkResult
 
@@ -42,13 +49,23 @@ fun PencarianScreen(
 ) {
     var query by remember { mutableStateOf("") }
 
+    // ✅ FITUR BARU: LAUNCHER SUARA
+    val voiceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            if (!spokenText.isNullOrBlank()) {
+                query = spokenText
+                viewModel.loadSuggestions(spokenText)
+            }
+        }
+    }
+
     val searchResult by viewModel.searchResult.observeAsState()
     val suggestions by viewModel.suggestions.observeAsState(emptyList())
-
-    // ✅ 1. OBSERVE DATA HISTORY
     val historyList by viewModel.searchHistory.observeAsState(emptyList())
 
-    // ✅ 2. LOAD HISTORY SAAT LAYAR DIBUKA
     LaunchedEffect(Unit) {
         viewModel.loadSearchHistory()
     }
@@ -68,7 +85,7 @@ fun PencarianScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.kri), // Icon panah back
+                painter = painterResource(id = R.drawable.kri),
                 contentDescription = null,
                 modifier = Modifier
                     .size(22.dp)
@@ -107,7 +124,7 @@ fun PencarianScreen(
                     ),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = 14.dp, end = 40.dp)
+                        .padding(start = 14.dp, end = 70.dp) // Padding end diperbesar
                         .fillMaxWidth()
                 ) { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
@@ -125,6 +142,25 @@ fun PencarianScreen(
                     }
                 }
 
+                // ✅ ICON MICROPHONE
+                Icon(
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = "Voice Search",
+                    tint = Color(0xFFFC7100),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 40.dp) // Posisi di sebelah kiri icon search
+                        .size(20.dp)
+                        .clickable {
+                            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Sebutkan nama makanan...")
+                            }
+                            voiceLauncher.launch(intent)
+                        }
+                )
+
+                // ICON SEARCH (Lama)
                 Image(
                     painter = painterResource(id = R.drawable.search_icon),
                     contentDescription = null,
@@ -144,93 +180,70 @@ fun PencarianScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        /** ==========================================================
-         * LOGIKA TAMPILAN:
-         * 1. Jika Query KOSONG -> Tampilkan HISTORY
-         * 2. Jika Query ISI    -> Tampilkan SUGGESTION / RESULT
-         * =========================================================== **/
-
+        // ... (Sisa kode ke bawah SAMA PERSIS dengan sebelumnya, tidak perlu diubah)
         if (query.isEmpty()) {
-
-            // ✅ TAMPILAN HISTORY LIST (Sesuai Request)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp) // Padding kiri kanan agak masuk
+                    .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Loop data history
                 historyList.forEach { historyItem ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp) // Jarak antar item
+                            .padding(vertical = 12.dp)
                             .clickable {
-                                // Kalau history diklik, langsung cari lagi
                                 query = historyItem
-                                viewModel.saveSearchHistory(historyItem) // Update timestamp
+                                viewModel.saveSearchHistory(historyItem)
                                 navController.navigate(Screen.FoodLibrary.createRoute(historyItem))
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Icon History (Jam)
                         Image(
-                            painter = painterResource(id = R.drawable.history), // ✅ Pastikan nama file history.png
+                            painter = painterResource(id = R.drawable.history),
                             contentDescription = "History",
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(16.dp))
-
-                        // Text History
                         Text(
                             text = historyItem,
-                            fontFamily = SourceSerifPro, // ✅ Font Source Serif Pro
-                            fontSize = 16.sp,            // ✅ Ukuran 16sp
+                            fontFamily = SourceSerifPro,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Normal,
                             color = Color.Black
                         )
                     }
                 }
             }
-
         } else {
-
-            // ✅ TAMPILAN SUGGESTIONS & SEARCH RESULT (Kode Lama)
-
-            // 1. Suggestions
+            // Suggestions & Result logic... (Sama seperti sebelumnya)
             if (suggestions.isNotEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp) // Samakan padding dengan History
+                        .padding(horizontal = 24.dp)
                 ) {
-                    // Loop data suggestions
                     suggestions.forEach { title ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    // Simpan ke history & cari
                                     viewModel.saveSearchHistory(title)
                                     navController.navigate(Screen.FoodLibrary.createRoute(title))
                                 }
-                                .padding(vertical = 12.dp), // Jarak antar item (atas-bawah)
+                                .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // ✅ ICON: searchsuggestion.png
                             Image(
                                 painter = painterResource(id = R.drawable.searchsuggestion),
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
-
-                            Spacer(modifier = Modifier.width(16.dp)) // Jarak icon ke teks
-
-                            // ✅ TEXT: Sesuai format gambar (Serif)
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
                                 text = title,
-                                fontFamily = SourceSerifPro, // Menggunakan font Serif
+                                fontFamily = SourceSerifPro,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = Color.Black,
@@ -239,12 +252,10 @@ fun PencarianScreen(
                             )
                         }
                     }
-                    // Spacer bawah agar tidak mentok jika list panjang
                     Spacer(modifier = Modifier.height(20.dp))
                 }
             }
 
-            // 2. Search Results
             Column(
                 modifier = Modifier
                     .fillMaxSize()

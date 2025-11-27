@@ -51,6 +51,9 @@ class RegistrationViewModel : ViewModel() {
     // State untuk menyimpan URL gambar dari Firestore
     val profileImageUrl = mutableStateOf<String?>(null)
 
+    //Untuk hapus akun
+    val showDeleteDialog = mutableStateOf(false)
+
     // ------------------------------------------------------
     // ✅ Membuat akun + menyimpan profil USER pertama kali
     // ------------------------------------------------------
@@ -299,5 +302,40 @@ class RegistrationViewModel : ViewModel() {
             "likedFoods" to likedFoods.value.toList(),
             "mainGoal" to mainGoal.value
         )
+    }
+    // ------------------------------------------------------
+// ✅ FUNGSI HAPUS AKUN (Delete User Data & Auth)
+// ------------------------------------------------------
+    fun deleteAccount(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val user = auth.currentUser ?: return
+        val uid = user.uid
+
+        isLoading.value = true
+
+        // 1. Hapus Data di Firestore (Koleksi 'users')
+        db.collection("users").document(uid)
+            .delete()
+            .addOnSuccessListener {
+                // 2. Hapus Sub-koleksi (Opsional tapi disarankan)
+                // Catatan: Firestore tidak otomatis menghapus sub-koleksi,
+                // tapi untuk pemula, menghapus dokumen induk biasanya cukup
+                // agar data tidak bisa diakses lagi via aplikasi.
+
+                // 3. Hapus Akun Autentikasi (Login)
+                user.delete()
+                    .addOnCompleteListener { task ->
+                        isLoading.value = false
+                        if (task.isSuccessful) {
+                            onSuccess() // Berhasil hapus total
+                        } else {
+                            // Biasanya gagal karena "Requires Recent Login"
+                            onFailure("Gagal hapus akun: ${task.exception?.message}. Silakan Login ulang dan coba lagi.")
+                        }
+                    }
+            }
+            .addOnFailureListener { e ->
+                isLoading.value = false
+                onFailure("Gagal hapus data: ${e.message}")
+            }
     }
 }
