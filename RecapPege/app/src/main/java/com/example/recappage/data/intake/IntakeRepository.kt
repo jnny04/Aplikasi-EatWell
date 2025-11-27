@@ -31,13 +31,20 @@ class IntakeRepository @Inject constructor() {
     // Fungsi Simpan
     fun addIntake(entry: IntakeEntry) {
         val uid = auth.currentUser?.uid ?: return
+
+        // 1. UPDATE STATE LOKAL DULUAN (OPTIMISTIC)
+        // Kita langsung tambahkan entry baru ke list yang sedang tampil.
+        // User akan melihat itemnya "instan" tanpa loading.
+        val currentList = _intakes.value
+        _intakes.value = currentList + entry
+
+        // 2. PROSES UPLOAD KE FIREBASE (BACKGROUND)
         val intakeMap = hashMapOf(
             "id" to entry.id,
             "name" to entry.name,
             "calories" to entry.calories,
             "date" to entry.date.toString(),
             "imageUrl" to entry.imageUrl,
-            // ✅ SIMPAN MACROS KE FIREBASE
             "carbs" to entry.carbs,
             "protein" to entry.protein,
             "fat" to entry.fat
@@ -48,12 +55,19 @@ class IntakeRepository @Inject constructor() {
             .document(entry.id.toString())
             .set(intakeMap)
             .addOnSuccessListener {
-                val currentList = _intakes.value
-                _intakes.value = currentList + entry
+                // Sukses tersimpan di server.
+                // Tidak perlu update UI lagi karena sudah kita lakukan di langkah 1.
+            }
+            .addOnFailureListener { e ->
+                // 3. ROLLBACK (JIKA GAGAL)
+                // Jika server menolak atau internet mati total, kita hapus lagi itemnya dari tampilan
+                // agar data tetap konsisten (Jujur ke user).
+                _intakes.value = _intakes.value.filter { it.id != entry.id }
+                println("Gagal menyimpan ke server: ${e.message}")
             }
     }
 
-    // Fungsi Load
+    // Fungsi Load Mingguan
     fun fetchWeeklyIntakes() {
         val uid = auth.currentUser?.uid ?: return
 

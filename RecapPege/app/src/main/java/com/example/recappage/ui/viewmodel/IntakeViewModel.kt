@@ -89,16 +89,14 @@ class IntakeViewModel @Inject constructor(
 
     fun addEntry(name: String, carbs: Int, protein: Int, fat: Int, imageUrl: String? = null) {
         val totalCals = (carbs * 4) + (protein * 4) + (fat * 9)
+
         val newEntry = IntakeEntry(
-            id = System.currentTimeMillis(),
+            id = System.currentTimeMillis(), // ID sementara
             name = if (name.isBlank()) "Unknown Food" else name,
             calories = totalCals,
             date = LocalDate.now(),
             imageUrl = imageUrl,
-            carbs = carbs,
-            protein = protein,
-            fat = fat
+            carbs = carbs, protein = protein, fat = fat
         )
-        repository.addIntake(newEntry)
-    }
+        repository.addIntake(newEntry)    }
 }
