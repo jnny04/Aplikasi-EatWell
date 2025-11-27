@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.DisposableEffect
 import com.example.recappage.util.ShakeDetector
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableFloatStateOf
 
 
 fun Scaffold(
@@ -269,10 +270,15 @@ fun SpinWheelSection(
     val coroutine = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
-    val shakeDetector = remember { ShakeDetector(context) }
+    var rotationValue by remember { mutableFloatStateOf(0f) }
     val performSpin = {
         if (!spinning && !showResult) { // Cek agar tidak spin kalau sedang loading atau popup muncul
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress) // Getar saat shake
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            rotationValue += (720..1800).random().toFloat()
+
+            spinning = true
+            recViewModel.spin(dietary)
+
             spinning = true
             recViewModel.spin(dietary)
 
@@ -287,15 +293,21 @@ fun SpinWheelSection(
             }
         }
     }
-    // Aktifkan sensor saat komponen muncul, matikan saat hilang (Hemat Baterai & HCI yang benar)
+    val shakeDetector = remember { ShakeDetector(context) }
     DisposableEffect(Unit) {
         shakeDetector.start {
-            performSpin() // Panggil fungsi spin saat terdeteksi guncangan
+            performSpin()
         }
         onDispose {
-            shakeDetector.stop() // Matikan sensor saat pindah halaman
+            shakeDetector.stop()
         }
     }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 36.dp),
+        contentAlignment = Alignment.TopStart
+    ) {
 
     Box(
         modifier = Modifier
@@ -303,7 +315,6 @@ fun SpinWheelSection(
             .padding(horizontal = 36.dp),
         contentAlignment = Alignment.TopStart
     ) {
-        // SPIN WHEEL DISPLAY
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -313,39 +324,22 @@ fun SpinWheelSection(
         ) {
             SpinWheel(
                 modifier = Modifier.size(360.dp),
+                rotationTarget = rotationValue, // Kirim nilai rotasi ke komponen
                 onClick = {
-                    performSpin()
-                    if (!spinning) {
-                        // 2. JALANKAN GETARAN SAAT DIKLIK
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-
-                        spinning = true
-                        recViewModel.spin(dietary)
-
-                        coroutine.launch {
-                            delay(3000)
-                            // 3. GETARAN LAGI SAAT HASIL MUNCUL (Opsional, agar user sadar)
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            setShowResult(true)
-                        }
-                        coroutine.launch {
-                            delay(3000)
-                            spinning = false
-                        }
-                    }
+                    performSpin() // Klik memanggil logika yang sama dengan Shake
                 }
             )
-
-            Image(
-                painter = painterResource(
-                    id = if (spinning) R.drawable.spin2 else R.drawable.spin
-                ),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = (-20).dp, y = (-130).dp)
-                    .size(82.dp)
-            )
+        }
+        Image(
+            painter = painterResource(
+                id = if (spinning) R.drawable.spin2 else R.drawable.spin
+            ),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .offset(x = (-20).dp, y = (-130).dp)
+                .size(82.dp)
+        )
         }
 
         // MY DIETARY SECTION
@@ -431,22 +425,18 @@ fun SpinWheelSection(
 @Composable
 fun SpinWheel(
     modifier: Modifier = Modifier,
+    rotationTarget: Float,
     onClick: () -> Unit = {}
 ) {
-    var rotation by remember { mutableStateOf(0f) }
-    var spinning by remember { mutableStateOf(false) }
 
-    val animated by animateFloatAsState(
-        targetValue = rotation,
+    val animatedRotation by animateFloatAsState(
+        targetValue = rotationTarget,
         animationSpec = tween(3000, easing = LinearOutSlowInEasing),
-        finishedListener = { spinning = false },
         label = "spin"
     )
 
     Box(
-        modifier = modifier.clickable(enabled = !spinning) {
-            rotation += (720..1800).random().toFloat()
-            spinning = true
+        modifier = modifier.clickable {
             onClick()
         },
         contentAlignment = Alignment.Center
@@ -458,7 +448,8 @@ fun SpinWheel(
             modifier = Modifier
                 .size(280.dp)
                 .offset(y = (-13).dp)
-                .graphicsLayer { rotationZ = animated },
+                // 5. Gunakan animatedRotation
+                .graphicsLayer { rotationZ = animatedRotation },
             contentScale = ContentScale.Fit
         )
 
