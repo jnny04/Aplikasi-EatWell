@@ -36,13 +36,18 @@ object NetworkModule {
 
         // Logging untuk melihat request/response di Logcat (Debug)
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            if (com.example.recappage.BuildConfig.DEBUG) {
+                // Jika sedang develop/debug, tampilkan semua detail
+                level = HttpLoggingInterceptor.Level.BODY
+            } else {
+                // Jika aplikasi sudah dirilis (Release), matikan logging total
+                level = HttpLoggingInterceptor.Level.NONE
+            }
         }
 
         return OkHttpClient.Builder()
             .cache(cache) // ✅ Pasang Cache di sini
             .addInterceptor(logging)
-            // ✅ Interceptor untuk mengatur aturan Cache
             .addInterceptor { chain ->
                 var request = chain.request()
 

@@ -122,6 +122,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation("com.google.firebase:firebase-storage")
 
+    implementation("androidx.biometric:biometric:1.1.0")
+
     // --- Testing ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

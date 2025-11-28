@@ -6,7 +6,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+// import androidx.activity.ComponentActivity <-- INI DIGANTI
+import androidx.fragment.app.FragmentActivity // 👈 INI YANG BARU
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,7 +24,8 @@ import com.example.recappage.utils.AmbientLightPreferences
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), SensorEventListener {
+// 👇 UBAH ComponentActivity MENJADI FragmentActivity
+class MainActivity : FragmentActivity(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
     private var proximitySensor: Sensor? = null

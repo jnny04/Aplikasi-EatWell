@@ -12,6 +12,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import java.io.ByteArrayOutputStream
 import androidx.compose.runtime.mutableIntStateOf // ✅ Import ini
+import com.example.recappage.util.SecurityLogger // ✅ TAMBAHAN: import logger
+
 
 class RegistrationViewModel : ViewModel() {
 
@@ -84,7 +86,11 @@ class RegistrationViewModel : ViewModel() {
 
                 db.collection("users").document(uid)
                     .set(data)
-                    .addOnSuccessListener { onSuccess() }
+                    .addOnSuccessListener {
+                        // ✅ LOG: catat aktivitas register berhasil
+                        SecurityLogger.logLoginActivity()
+                        onSuccess()
+                    }
                     .addOnFailureListener { e ->
                         onFailure(e.localizedMessage ?: "Gagal menyimpan profil.")
                     }
@@ -130,6 +136,13 @@ class RegistrationViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 isLoading.value = false
                 loadError.value = e.localizedMessage ?: "Gagal memuat profil."
+
+                // ✅ LOG: kalau gagal load profile, catat sebagai aktivitas mencurigakan ringan
+                SecurityLogger.logSuspiciousActivity(
+                    reason = "Gagal load profil: ${e.localizedMessage}",
+                    action = "loadUserProfile"
+                )
+
                 onError(loadError.value!!)
                 isLoading.value = false
             }
@@ -150,7 +163,7 @@ class RegistrationViewModel : ViewModel() {
                 dailyCalorieGoal.intValue = goal // Update state lokal juga
             }
             .addOnFailureListener { e ->
-                println("Gagal simpan goal: ${e.message}")
+                Log.e("RegistrationViewModel", "Gagal simpan goal", e)
             }
     }
 
@@ -166,6 +179,17 @@ class RegistrationViewModel : ViewModel() {
     ) {
         val uid = auth.currentUser?.uid ?: run {
             onFailure("User belum login.")
+            return
+        }
+
+        // ✅ Tambahan: deteksi data tidak wajar (contoh: berat badan sangat besar)
+        val berat = weight.value.toIntOrNull() ?: 0
+        if (berat > 300) {
+            SecurityLogger.logSuspiciousActivity(
+                reason = "Berat badan tidak wajar saat update profil: $berat kg",
+                action = "updateUserProfile"
+            )
+            onFailure("Data berat tidak valid.")
             return
         }
 
@@ -248,6 +272,11 @@ class RegistrationViewModel : ViewModel() {
                 onSuccess()
             }
             .addOnFailureListener { e ->
+                // ✅ Log juga ke SecurityLogger ketika update profil gagal
+                SecurityLogger.logSuspiciousActivity(
+                    reason = "Gagal update profil: ${e.localizedMessage}",
+                    action = "saveProfileDataToFirestore"
+                )
                 onFailure(e.localizedMessage ?: "Gagal update profil.")
             }
     }
@@ -304,11 +333,17 @@ class RegistrationViewModel : ViewModel() {
         )
     }
     // ------------------------------------------------------
-// ✅ FUNGSI HAPUS AKUN (Delete User Data & Auth)
-// ------------------------------------------------------
+    // ✅ FUNGSI HAPUS AKUN (Delete User Data & Auth)
+    // ------------------------------------------------------
     fun deleteAccount(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val user = auth.currentUser ?: return
         val uid = user.uid
+
+        // ✅ Catat aktivitas penghapusan akun
+        SecurityLogger.logSuspiciousActivity(
+            reason = "User menghapus akun",
+            action = "deleteAccount"
+        )
 
         isLoading.value = true
 
