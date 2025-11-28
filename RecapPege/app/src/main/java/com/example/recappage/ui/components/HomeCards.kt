@@ -140,12 +140,11 @@ fun CaloriesCard(
 
     Box(
         modifier = Modifier
-            .size(width = 320.dp, height = 240.dp)
-            // 🔥 shadow via graphicsLayer biar lebih kelihatan
+            .size(width = 320.dp, height = 240.dp) // Ukuran Tetap (Sesuai Request)
             .graphicsLayer {
-                shadowElevation = 12.dp.toPx()     // naikin dikit biar kebaca
+                shadowElevation = 12.dp.toPx()
                 shape = RoundedCornerShape(20.dp)
-                clip = true                        // konten ke-clip, shadow tetap keluar
+                clip = true
             }
             .background(cardColor, RoundedCornerShape(20.dp))
             .clickable { onClick() }
@@ -176,11 +175,14 @@ fun CaloriesCard(
                 Spacer(Modifier.height(16.dp))
 
                 // Lingkaran Progress
+                // 🔥 TIPS: Jika masih sempit, ubah 120.dp jadi 110.dp di sini & di Canvas
+                val circleSize = 115.dp
+
                 Box(
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier.size(circleSize),
                     contentAlignment = Alignment.Center
                 ) {
-                    Canvas(modifier = Modifier.size(120.dp)) {
+                    Canvas(modifier = Modifier.size(circleSize)) {
                         // Track
                         drawArc(
                             color = trackColor,
@@ -201,7 +203,7 @@ fun CaloriesCard(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = valFormatted(remaining),
-                            fontSize = 24.sp,
+                            fontSize = 22.sp, // 🔥 Turunkan dikit dari 24 ke 22 biar aman
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
                             color = textColor
@@ -218,8 +220,9 @@ fun CaloriesCard(
 
             // --- KANAN: INFO & TOMBOL ---
             Column(
-                modifier = Modifier.padding(top = 12.dp), // ✅ DINAIN (Tadinya 40.dp)
-                verticalArrangement = Arrangement.spacedBy(12.dp) // ✅ DIPADATKAN (Tadinya 16.dp)
+                modifier = Modifier.padding(top = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.End // 🔥 PERBAIKAN 1: Rata Kanan
             ) {
                 // Info Base Goal
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -229,7 +232,7 @@ fun CaloriesCard(
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(Modifier.width(10.dp))
-                    Column {
+                    Column(horizontalAlignment = Alignment.End) { // Rata kanan juga
                         Text("Base Goal", fontSize = 10.sp, color = subTextColor, fontFamily = SourceSans3)
                         Text("${valFormatted(baseGoal)} cal", fontSize = 14.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = textColor)
                     }
@@ -243,20 +246,21 @@ fun CaloriesCard(
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(Modifier.width(10.dp))
-                    Column {
+                    Column(horizontalAlignment = Alignment.End) { // Rata kanan juga
                         Text("Saved", fontSize = 10.sp, color = subTextColor, fontFamily = SourceSans3)
                         Text("$savedRecipe Recipes", fontSize = 14.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = textColor)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
+
                 // Tombol Log Manually
                 Box(
                     modifier = Modifier
                         .height(36.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF5CA135))
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 12.dp), // 🔥 Kurangi padding horizontal (16->12) biar muat
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -265,13 +269,14 @@ fun CaloriesCard(
                             contentDescription = null,
                             modifier = Modifier.size(12.dp)
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp)) // Kurangi jarak icon-text dikit
                         Text(
                             text = "Log manually",
                             color = Color.White,
-                            fontSize = 11.sp,
+                            fontSize = 10.sp, // 🔥 PERBAIKAN 2: Kecilkan font (11->10)
                             fontFamily = SourceSerifPro,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1 // 🔥 PERBAIKAN 3: Paksa 1 baris
                         )
                     }
                 }
