@@ -86,11 +86,13 @@ fun FoodLibraryPage(
     }
 
     var queryText by remember { mutableStateOf(decodedQuery ?: "") }
+
     val voiceLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            val spokenText =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
 
             if (!spokenText.isNullOrBlank()) {
                 queryText = spokenText
@@ -106,6 +108,9 @@ fun FoodLibraryPage(
     val recipesState by viewModel.recipesResponse.observeAsState()
 
     val scrollState = rememberLazyGridState()
+
+    // ✅ Snackbar untuk error
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
@@ -139,10 +144,18 @@ fun FoodLibraryPage(
         }
     }
 
+    // ✅ Tampilkan snackbar ramah kalau error
+    LaunchedEffect(recipesState) {
+        if (recipesState is NetworkResult.Error<*>) {
+            snackbarHostState.showSnackbar(
+                message = "Terjadi masalah saat memuat resep. Periksa koneksi Anda dan coba lagi."
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
             .background(MaterialTheme.colorScheme.background),
         topBar = {
             TopBorder(
@@ -155,6 +168,9 @@ fun FoodLibraryPage(
                 modifier = Modifier.zIndex(3f),
                 navController = navController
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
 
@@ -162,7 +178,6 @@ fun FoodLibraryPage(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.background
                 .background(MaterialTheme.colorScheme.background)
         ) {
 
@@ -215,8 +230,10 @@ fun FoodLibraryPage(
                         .weight(1f)
                         .height(38.dp)
                         .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
-                        // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.surface (Agar search bar tidak silau di dark mode)
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surface,
+                            RoundedCornerShape(20.dp)
+                        )
                         .padding(horizontal = 0.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -237,7 +254,6 @@ fun FoodLibraryPage(
                         onValueChange = { queryText = it },
                         singleLine = true,
                         textStyle = TextStyle(
-                            // ✅ GANTI: Color.Black -> MaterialTheme.colorScheme.onSurface
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             fontFamily = SourceSans3
@@ -270,10 +286,17 @@ fun FoodLibraryPage(
                             .padding(end = 36.dp)
                             .size(20.dp)
                             .clickable {
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Sebutkan resep...")
-                                }
+                                val intent =
+                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                        )
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_PROMPT,
+                                            "Sebutkan resep..."
+                                        )
+                                    }
                                 voiceLauncher.launch(intent)
                             }
                     )
@@ -317,9 +340,10 @@ fun FoodLibraryPage(
             } else if (state is NetworkResult.Error<*> && paginatedRecipes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "⚠️ ${state.message ?: "Error loading recipes"}",
+                        text = "⚠️ ${state.message ?: "Terjadi kesalahan saat memuat resep"}",
                         color = Color.Red,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
                     )
                 }
             } else {
@@ -404,7 +428,8 @@ fun FoodLibraryPage(
                         )
                     },
                     onOrderClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                        val intent =
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
                         context.startActivity(intent)
                     }
                 )
@@ -428,10 +453,8 @@ fun RecipeCard(
             .width(172.dp)
             .height(172.dp)
             .clip(RoundedCornerShape(12.dp))
-            // ✅ GANTI: Color(0xFFF5F5F5) -> MaterialTheme.colorScheme.surface
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        val context = LocalContext.current
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(recipe.image)
@@ -460,7 +483,8 @@ fun RecipeCard(
                 modifier = Modifier
                     .size(22.dp)
                     .clickable {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                        val intent =
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
                         context.startActivity(intent)
                     }
             )
@@ -481,8 +505,6 @@ fun RecipeCard(
                 .fillMaxWidth()
                 .height(44.dp)
                 .align(Alignment.BottomCenter)
-                // ✅ GANTI: background Color.White -> MaterialTheme.colorScheme.surface
-                // Tambahkan alpha agar transparan di atas gambar
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
                 .zIndex(2f),
             contentAlignment = Alignment.Center
@@ -490,7 +512,6 @@ fun RecipeCard(
             Text(
                 text = recipe.title,
                 fontSize = 13.sp,
-                // ✅ GANTI: Color(0xFF333333) -> MaterialTheme.colorScheme.onSurface
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
@@ -517,12 +538,9 @@ fun CategoryChip(
                 shape = RoundedCornerShape(50)
             )
             .clip(RoundedCornerShape(50))
-            // ✅ GANTI: if (!selected) Color(0xFFD9D9D9) -> MaterialTheme.colorScheme.surface
-            // Biarkan warna oranye (FC7100) tetap hardcode karena itu warna brand
             .background(if (selected) Color(0xFFFC7100) else MaterialTheme.colorScheme.surface)
             .border(
                 width = if (selected) 2.dp else 1.dp,
-                // ✅ GANTI: Color(0xFFBFBFBF) -> Color.Gray (Agar aman di kedua mode)
                 color = if (selected) Color.White else Color.Gray,
                 shape = RoundedCornerShape(50)
             )
@@ -534,7 +552,6 @@ fun CategoryChip(
             fontSize = 14.sp,
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.SemiBold,
-            // ✅ GANTI: if (!selected) Color.Black -> MaterialTheme.colorScheme.onSurface
             color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
         )
     }

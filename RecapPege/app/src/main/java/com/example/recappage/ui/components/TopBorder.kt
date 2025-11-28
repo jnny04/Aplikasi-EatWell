@@ -41,7 +41,7 @@ fun HeaderBackground(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .align(Alignment.Center)  // tengah
                 .offset(y = 15.dp)         // sedikit turun
-                .size(280.dp)              // atur besar logo di sini
+                .size(270.dp)              // atur besar logo di sini
         )
     }
 }
@@ -152,7 +152,7 @@ fun TopBorder(
                 photoUrl = photoUrl,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 15.dp, end = 15.dp)
+                    .padding(top = 15.dp, end = 2.dp)
             )
         }
     }

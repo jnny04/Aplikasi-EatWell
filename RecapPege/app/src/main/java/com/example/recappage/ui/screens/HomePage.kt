@@ -1,5 +1,8 @@
 package com.example.recappage.ui.screens
 
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -51,7 +54,7 @@ import com.example.recappage.util.ShakeDetector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import com.example.recappage.ui.theme.TapRing
@@ -72,6 +75,19 @@ fun Scaffold(
 // -------------------------------------------------------------
 @Composable
 fun HomePage(navController: NavHostController) {
+
+    val appcontext = LocalContext.current
+
+    val batteryStatus = appcontext.registerReceiver(
+        null,
+        IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+    )
+
+    val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 100
+    val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: 100
+    val batteryLevel = (level * 100) / scale
+
+    val isLowBattery = batteryLevel <= 20
 
     val recViewModel: RecommendationViewModel = hiltViewModel()
     val randomFood by recViewModel.randomFood.collectAsState()
@@ -111,6 +127,8 @@ fun HomePage(navController: NavHostController) {
     var showResult by remember { mutableStateOf(false) }
     var dietary by remember { mutableStateOf("vegan") }
     val scope = rememberCoroutineScope()
+
+
 
     LaunchedEffect(Unit) { recViewModel.loadFoods() }
 
@@ -172,7 +190,8 @@ fun HomePage(navController: NavHostController) {
                     showResult = showResult,
                     setShowResult = { showResult = it },
                     dietary = dietary,
-                    setDietary = { dietary = it }
+                    setDietary = { dietary = it },
+                    isLowBattery = isLowBattery   // ✅ KIRIM KE BAWAH
                 )
             }
         }
@@ -276,7 +295,8 @@ fun SpinWheelSection(
     showResult: Boolean,
     setShowResult: (Boolean) -> Unit,
     dietary: String,
-    setDietary: (String) -> Unit
+    setDietary: (String) -> Unit,
+    isLowBattery: Boolean // ✅ TAMBAHAN
 ) {
     var spinning by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -374,10 +394,9 @@ fun SpinWheelSection(
             contentAlignment = Alignment.Center
         ) {
             SpinWheel(
-                // 🔥 2. PERKECIL UKURAN RODA SEDIKIT LAGI
-                // Dari 290.dp -> 270.dp (Agar muat di box yang lebih pendek)
                 modifier = Modifier.size(270.dp),
                 rotationTarget = rotationValue,
+                isLowBattery = isLowBattery, // ✅ MASUKKAN INI
                 onClick = { performSpin() }
             )
         }
@@ -435,11 +454,18 @@ fun SpinWheelSection(
 fun SpinWheel(
     modifier: Modifier = Modifier,
     rotationTarget: Float,
+    isLowBattery: Boolean, // ✅ TAMBAHAN BARU
     onClick: () -> Unit
 ) {
+    // ⬇️ Durasi animasi berubah sesuai baterai
+    val animationDuration = if (isLowBattery) 800 else 3000
+
     val animatedRotation by animateFloatAsState(
         targetValue = rotationTarget,
-        animationSpec = tween(3000, easing = LinearOutSlowInEasing),
+        animationSpec = tween(
+            durationMillis = animationDuration,
+            easing = LinearOutSlowInEasing
+        ),
         label = "spin"
     )
 
@@ -447,20 +473,17 @@ fun SpinWheel(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        // LAYER 1: RODA PUTAR (Hijau) - BERPUTAR DI BELAKANG
-        // ✅ Ukuran dikembalikan ke 1.0f (Full) agar pas mengisi frame
         Image(
             painter = painterResource(id = R.drawable.sp2),
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize(1.0f)
-                .offset(y = 2.dp) // Offset sama dengan sp1 biar center
+                .offset(y = 2.dp)
                 .graphicsLayer { rotationZ = animatedRotation },
             contentScale = ContentScale.Fit,
             alignment = Alignment.Center
         )
 
-        // LAYER 2: BASE / FRAME (Oranye) - DIAM DI DEPAN
         Image(
             painter = painterResource(id = R.drawable.sp1),
             contentDescription = null,
@@ -479,7 +502,6 @@ fun SpinWheel(
             contentAlignment = Alignment.Center
         ) {
 
-            // Glow halus di belakang (radial gradient)
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -488,7 +510,7 @@ fun SpinWheel(
                         drawCircle(
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    Color(0x33000000), // abu gelap transparan
+                                    Color(0x33000000),
                                     Color.Transparent
                                 ),
                                 center = center,
@@ -498,17 +520,15 @@ fun SpinWheel(
                     }
             )
 
-            // RING LUAR – lavender lembut seperti desain
             Box(
                 modifier = Modifier
                     .size(70.dp)
                     .background(
-                        color = TapRing,        // ⬅️ pakai warna custom
+                        color = TapRing,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // INNER CIRCLE – putih + border tipis
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -518,14 +538,14 @@ fun SpinWheel(
                             shape = CircleShape
                         )
                         .background(
-                            color = Color.White, // center benar-benar putih
+                            color = Color.White,
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "TAP",
-                        color = TapText,        // abu muda untuk tulisan
+                        color = TapText,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
                         fontFamily = SourceSerifPro

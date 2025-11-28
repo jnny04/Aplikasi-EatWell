@@ -16,17 +16,21 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme // ✅ Import MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter // ✅ Import ColorFilter
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,12 +55,13 @@ fun PencarianScreen(
 ) {
     var query by remember { mutableStateOf("") }
 
-    // ✅ FITUR BARU: LAUNCHER SUARA
+    // Launcher suara (voice search)
     val voiceLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
+            val spokenText =
+                result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.get(0)
             if (!spokenText.isNullOrBlank()) {
                 query = spokenText
                 viewModel.loadSuggestions(spokenText)
@@ -76,7 +81,6 @@ fun PencarianScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 40.dp)
-            // ✅ GANTI: Color.White -> background
             .background(MaterialTheme.colorScheme.background)
     ) {
 
@@ -93,7 +97,6 @@ fun PencarianScreen(
                 modifier = Modifier
                     .size(22.dp)
                     .clickable { navController.popBackStack() },
-                // ✅ GANTI: Tinting agar terlihat di Dark Mode
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
             )
 
@@ -104,7 +107,6 @@ fun PencarianScreen(
                     .weight(1f)
                     .height(32.dp)
                     .border(2.dp, Color(0xFFFC7100), RoundedCornerShape(50))
-                    // ✅ GANTI: Color.White -> surface
                     .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
             ) {
                 BasicTextField(
@@ -115,7 +117,6 @@ fun PencarianScreen(
                     },
                     singleLine = true,
                     textStyle = TextStyle(
-                        // ✅ GANTI: Color.Black -> onSurface
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         fontFamily = SourceSans3
@@ -131,15 +132,17 @@ fun PencarianScreen(
                     ),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = 14.dp, end = 70.dp) // Padding end diperbesar
+                        .padding(start = 14.dp, end = 70.dp)
                         .fillMaxWidth()
                 ) { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
                         if (query.isEmpty()) {
                             Text(
                                 text = "Got something on your mind?",
                                 fontSize = 10.sp,
-                                // ✅ GANTI: Color.Gray -> onSurface (alpha 0.6)
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 fontFamily = SourceSans3,
                                 maxLines = 1,
@@ -150,19 +153,25 @@ fun PencarianScreen(
                     }
                 }
 
-                // ✅ ICON MICROPHONE
+                // ICON MICROPHONE
                 Icon(
                     imageVector = Icons.Default.Mic,
                     contentDescription = "Voice Search",
                     tint = Color(0xFFFC7100),
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 40.dp) // Posisi di sebelah kiri icon search
+                        .padding(end = 40.dp)
                         .size(20.dp)
                         .clickable {
                             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                putExtra(RecognizerIntent.EXTRA_PROMPT, "Sebutkan nama makanan...")
+                                putExtra(
+                                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                )
+                                putExtra(
+                                    RecognizerIntent.EXTRA_PROMPT,
+                                    "Sebutkan nama makanan..."
+                                )
                             }
                             voiceLauncher.launch(intent)
                         }
@@ -182,7 +191,6 @@ fun PencarianScreen(
                                 navController.navigate(Screen.FoodLibrary.createRoute(query))
                             }
                         },
-                    // ✅ GANTI: Tinting agar terlihat di Dark Mode
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                 )
             }
@@ -190,7 +198,9 @@ fun PencarianScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // ... (Sisa kode ke bawah SAMA PERSIS dengan sebelumnya, tidak perlu diubah)
+        // =======================
+        // 1. KETIKA QUERY KOSONG → TAMPILKAN HISTORY
+        // =======================
         if (query.isEmpty()) {
             Column(
                 modifier = Modifier
@@ -214,7 +224,6 @@ fun PencarianScreen(
                             painter = painterResource(id = R.drawable.history),
                             contentDescription = "History",
                             modifier = Modifier.size(20.dp),
-                            // ✅ GANTI: Tinting agar terlihat di Dark Mode
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -223,14 +232,17 @@ fun PencarianScreen(
                             fontFamily = SourceSerifPro,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Normal,
-                            // ✅ GANTI: Color.Black -> onBackground
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 }
             }
         } else {
-            // Suggestions & Result logic... (Sama seperti sebelumnya)
+            // =======================
+            // 2. KETIKA ADA QUERY → SUGGESTIONS + HASIL SEARCH
+            // =======================
+
+            // SUGGESTIONS
             if (suggestions.isNotEmpty()) {
                 Column(
                     modifier = Modifier
@@ -252,7 +264,6 @@ fun PencarianScreen(
                                 painter = painterResource(id = R.drawable.searchsuggestion),
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                // ✅ GANTI: Tinting agar terlihat di Dark Mode
                                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
                             )
                             Spacer(modifier = Modifier.width(16.dp))
@@ -261,7 +272,6 @@ fun PencarianScreen(
                                 fontFamily = SourceSerifPro,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Normal,
-                                // ✅ GANTI: Color.Black -> onBackground
                                 color = MaterialTheme.colorScheme.onBackground,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -272,42 +282,88 @@ fun PencarianScreen(
                 }
             }
 
-            Column(
+            // HASIL SEARCH (PAKAI LazyColumn)
+            val listState = rememberLazyListState()
+
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+                state = listState
             ) {
-                when (searchResult) {
+                when (val state = searchResult) {
                     is NetworkResult.Success -> {
-                        val data = (searchResult as NetworkResult.Success<FoodRecipes>).data
+                        val data = (state as NetworkResult.Success<FoodRecipes>).data
                         val list = data?.recipes ?: emptyList()
-                        list.forEach { recipe ->
+
+                        if (list.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "Tidak ada resep yang cocok untuk \"$query\".",
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                )
+                            }
+                        } else {
+                            items(list) { recipe ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 10.dp)
+                                        .clickable {
+                                            navController.navigate("menuDetails/${recipe.id}")
+                                        }
+                                ) {
+                                    Text(
+                                        recipe.title,
+                                        fontFamily = SourceSans3,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.padding(vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    is NetworkResult.Error<*> -> {
+                        item {
+                            Text(
+                                text = "Terjadi masalah saat mencari resep. Coba periksa koneksi Anda.",
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
+
+                    is NetworkResult.Loading -> {
+                        item {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 10.dp)
-                                    .clickable { navController.navigate("menuDetails/${recipe.id}") }
+                                    .padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
                                 Text(
-                                    recipe.title,
-                                    fontFamily = SourceSans3,
-                                    fontSize = 12.sp,
-                                    // ✅ GANTI: Default color -> onBackground
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.padding(vertical = 6.dp)
+                                    text = "Searching...",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
                                 )
                             }
                         }
                     }
-                    is NetworkResult.Error -> {
-                        Text("No results found.", color = Color.Red, fontSize = 12.sp)
+
+                    null -> {
+                        // Tidak ada state, tidak menampilkan apa-apa
                     }
-                    is NetworkResult.Loading -> {
-                        // ✅ GANTI: Color.Gray -> onBackground (alpha)
-                        Text("Searching...", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f), fontSize = 12.sp)
-                    }
-                    null -> {}
                 }
             }
         }

@@ -52,7 +52,7 @@ fun AppNavigation(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.HomePage.route
+        startDestination = Screen.SignIn.route
     ) {
 
         // ---------------- AUTH ----------------
@@ -93,7 +93,6 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         // ---------------- FOOD LIBRARY ----------------
-        // ---------------- FOOD LIBRARY tanpa query (bottom nav) ----------------
         composable(
             route = Screen.FoodLibrary.route
         ) {
