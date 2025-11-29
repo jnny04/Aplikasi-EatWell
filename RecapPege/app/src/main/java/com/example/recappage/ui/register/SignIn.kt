@@ -1,98 +1,110 @@
 package com.example.recappage.ui.register
 
-
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable // 👈 Tambahkan import clickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.runtime.*
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextDecoration
-import com.example.recappage.ui.theme.SourceSerifPro
-import com.example.recappage.ui.theme.SourceSans3 // Merujuk ke FontFamily yang Anda definisikan
-
-
-import com.google.firebase.auth.FirebaseAuth // ✅ Baru
-import androidx.compose.ui.platform.LocalContext // ✅ Baru
-import android.widget.Toast // ✅ Baru untuk notifikasi error
 import com.example.recappage.R
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.navigation.Screen
+import com.example.recappage.ui.theme.SourceSans3
+import com.example.recappage.ui.theme.SourceSerifPro
+import com.google.firebase.auth.FirebaseAuth
+import com.descope.Descope
 
+// ✅ Tambahkan import coroutine (jika belum otomatis)
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignInScreen(navController: NavHostController) {
 
-    // Pindahkan State Input ke sini agar bisa diakses oleh Tombol Sign In
+    // State Input
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Inisialisasi Firebase Auth
+    // Inisialisasi Auth & Context
     val auth = remember { FirebaseAuth.getInstance() }
-    val context = LocalContext.current // Dapatkan konteks
+    val context = LocalContext.current
+    val containerColor = Color(0xFFD3D3D3)
 
-    val containerColor = Color(0xFFD3D3D3) // Light gray color
+    // ✅ 1. Buat Scope Coroutine (Untuk menjalankan fungsi suspend Descope)
+    val coroutineScope = rememberCoroutineScope()
 
-    // Fungsi untuk Log In
+    // ---------------------------------------------------------
+    // ✅ LOGIKA LOGIN DESCOPE (Fixed with Coroutine)
+    // ---------------------------------------------------------
+    val performDescopeLogin: () -> Unit = {
+        val projectId = "P35deW4J1H5rkOUS9ZTwb0hD1pbd"
+        val flowUrl = "https://api.descope.com/login/$projectId?flow=sign-up-or-in"
+
+        // ✅ 2. Bungkus pemanggilan Descope dalam coroutineScope.launch
+        coroutineScope.launch {
+            try {
+                Descope.flow.create(
+                    flowUrl = flowUrl,
+                    deepLinkUrl = "android-app://com.example.recappage/descope"
+                ).start(context)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error starting Descope: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // LOGIKA LOGIN FIREBASE
+    // ---------------------------------------------------------
     val performSignIn: () -> Unit = {
-        // 1. Cek apakah email adalah akun Gmail
         if (!email.endsWith("@gmail.com", ignoreCase = true)) {
             Toast.makeText(context, "Hanya akun Gmail (@gmail.com) yang diizinkan untuk masuk.", Toast.LENGTH_LONG).show()
         } else {
-            // 2. Lakukan Sign In dengan Firebase Email/Password
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        // Login Berhasil
                         Toast.makeText(context, "Selamat datang kembali!", Toast.LENGTH_SHORT).show()
-
-                        // PERBAIKAN 1: Gunakan rute yang benar dan bungkus dalam run
                         run {
-                            navController.navigate(Screen.HomePage.route) { // Gunakan Screen.HomePage.route
-                                popUpTo(Screen.SignIn.route) { inclusive = true } // Gunakan Screen.SignIn.route
+                            navController.navigate(Screen.HomePage.route) {
+                                popUpTo(Screen.SignIn.route) { inclusive = true }
                             }
                         }
                     } else {
-                        // Login Gagal (misal: email/password salah)
                         Toast.makeText(context, "Login Gagal. Cek kembali email dan password Anda.", Toast.LENGTH_LONG).show()
                     }
                 }
         }
     }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(), // 👈 .background(Color.White) DIHAPUS DARI SINI
 
-        // 🔽 PINDAHKAN TopBorder KE SLOT 'topBar' 🔽
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopBorder(
                 navController = navController,
@@ -103,31 +115,22 @@ fun SignInScreen(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // 👈 Padding ini sekarang sudah benar (dimulai di BAWAH TopBorder)
-                .background(Color.White), // 👈 .background(Color.White) PINDAH KE SINI
+                .padding(innerPadding)
+                .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // ❌ TopBorder(...) DIHAPUS DARI SINI
 
+            Spacer(modifier = Modifier.weight(0.1f))
 
-            // Spacer atas biar konten turun ke tengah
-            // 🔹 Spacer atas
-            Spacer(modifier = Modifier.weight(0.1f)) // <-- Kecilkan weight untuk geser ke atas
-
-            // 🔽 TAMBAHKAN KODE DI BAWAH INI 🔽
             Image(
                 painter = painterResource(id = R.drawable.eatwelllogo),
                 contentDescription = "Eatwell Logo",
-                modifier = Modifier.height(150.dp) // <-- Sesuaikan ukuran tinggi (60.dp) sesuai kebutuhan
+                modifier = Modifier.height(150.dp)
             )
 
-            // Tambahkan spasi antara logo dan teks "Welcome Back!"
             Spacer(modifier = Modifier.height(16.dp))
-            // 🔼 BATAS AKHIR KODE TAMBAHAN 🔼
 
-
-            // 🔹 Welcome Text
             WelcomeText()
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -140,16 +143,13 @@ fun SignInScreen(navController: NavHostController) {
                     .padding(horizontal = 32.dp)
             ) {
                 // Group: Field + Forgot Password
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // **START: Konten Form Input (Pengganti LoginForm)**
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Email Input Field
+                        // Email Input
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -176,7 +176,7 @@ fun SignInScreen(navController: NavHostController) {
                             )
                         )
 
-                        // Password Input Field
+                        // Password Input
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -191,11 +191,7 @@ fun SignInScreen(navController: NavHostController) {
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             trailingIcon = {
-                                val imageVector = if (passwordVisible)
-                                    Icons.Filled.VisibilityOff
-                                else
-                                    Icons.Filled.Visibility
-
+                                val imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(imageVector = imageVector, contentDescription = "Toggle password visibility", tint = Color.Gray)
                                 }
@@ -215,37 +211,60 @@ fun SignInScreen(navController: NavHostController) {
                             )
                         )
                     }
-                    // **END: Konten Form Input**
 
-                    // Forgot Password
+                    // Forgot Password Link
                     Text(
                         text = "Forgot Password?",
                         color = Color(0xFFFC7100),
                         fontSize = 10.sp,
                         style = TextStyle(
                             fontFamily = SourceSans3,
-                            fontWeight = FontWeight.SemiBold, // Semibold
-                            textDecoration = TextDecoration.Underline // ✅ Underline
+                            fontWeight = FontWeight.SemiBold,
+                            textDecoration = TextDecoration.Underline
                         ),
-
                         modifier = Modifier
                             .align(Alignment.End)
                             .offset(y = (4).dp, x = (-5).dp)
-                            .clickable {
-                                navController.navigate(Screen.ForgotPass.route)                            }
+                            .clickable { navController.navigate(Screen.ForgotPass.route) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Sign In Button
+                // Tombol Sign In (Firebase)
                 HijauImage(onClick = performSignIn)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Pembatas "OR"
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+                    Text(
+                        text = "  OR  ",
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Tombol Continue with Google (Descope)
+                SocialLoginButton(
+                    text = "Continue with Google",
+                    iconResId = R.drawable.googleicon,
+                    onClick = {
+                        performDescopeLogin()
+                    }
+                )
             }
 
-            // Spacer bawah biar tetap center-ish
             Spacer(modifier = Modifier.weight(1f))
 
-            // 🔹 Bottom Register Text
             BottomRegisterText(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
@@ -256,111 +275,24 @@ fun SignInScreen(navController: NavHostController) {
     }
 }
 
-
 @Composable
 fun WelcomeText() {
     Text(
         text = "Welcome Back!",
-        // Ubah warna ke FC7100 (Orange)
         color = Color(0xFFFC7100),
         fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
-        // Terapkan font kustom (asumsi sudah didefinisikan)
-        style = TextStyle(
-            // Ganti 'SourceSerifPro' dengan nama FontFamily yang sudah Anda definisikan
-            fontFamily = SourceSerifPro
-        )
+        style = TextStyle(fontFamily = SourceSerifPro)
     )
 }
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun LoginForm() {
-//    var email by remember { mutableStateOf("") }
-//    var password by remember { mutableStateOf("") }
-//    var passwordVisible by remember { mutableStateOf(false) }
-//
-//    val containerColor = Color(0xFFD3D3D3) // Light gray color
-//
-//    Column(
-//        modifier = Modifier.fillMaxWidth(),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        verticalArrangement = Arrangement.spacedBy(16.dp)
-//    ) {
-//        // Email Input Field
-//        OutlinedTextField(
-//            value = email,
-//            onValueChange = { email = it },
-//            label = { Text("Email") },
-//            leadingIcon = {
-//                Icon(
-//                    painter = painterResource(id = R.drawable.emailicon),
-//                    contentDescription = "Email Icon",
-//                    tint = Color.Gray
-//                )
-//            },
-//            modifier = Modifier.fillMaxWidth(),
-//            shape = RoundedCornerShape(8.dp),
-//            colors = OutlinedTextFieldDefaults.colors( // <-- Perbaikan di sini
-//                focusedBorderColor = Color.Transparent,
-//                unfocusedBorderColor = Color.Transparent,
-//                focusedContainerColor = containerColor,
-//                unfocusedContainerColor = containerColor,
-//                cursorColor = Color.Gray, // Optional: for cursor color
-//                focusedLabelColor = Color.Gray,
-//                unfocusedLabelColor = Color.Gray,
-//                focusedLeadingIconColor = Color.Gray,
-//                unfocusedLeadingIconColor = Color.Gray
-//            )
-//        )
-//
-//        // Password Input Field
-//        OutlinedTextField(
-//            value = password,
-//            onValueChange = { password = it },
-//            label = { Text("Password") },
-//            leadingIcon = {
-//                Icon(
-//                    painter = painterResource(id = R.drawable.pswordicon),
-//                    contentDescription = "Password Icon",
-//                    tint = Color.Gray
-//                )
-//            },
-//            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-//            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-//            trailingIcon = {
-//                val imageVector = if (passwordVisible)
-//                    Icons.Filled.VisibilityOff
-//                else
-//                    Icons.Filled.Visibility
-//
-//                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-//                    Icon(imageVector = imageVector, contentDescription = "Toggle password visibility", tint = Color.Gray)
-//                }
-//            },
-//            modifier = Modifier.fillMaxWidth(),
-//            shape = RoundedCornerShape(8.dp),
-//            colors = OutlinedTextFieldDefaults.colors( // <-- Perbaikan di sini
-//                focusedBorderColor = Color.Transparent,
-//                unfocusedBorderColor = Color.Transparent,
-//                focusedContainerColor = containerColor,
-//                unfocusedContainerColor = containerColor,
-//                cursorColor = Color.Gray, // Optional: for cursor color
-//                focusedLabelColor = Color.Gray,
-//                unfocusedLabelColor = Color.Gray,
-//                focusedLeadingIconColor = Color.Gray,
-//                unfocusedLeadingIconColor = Color.Gray
-//            )
-//        )
-//    }
-//}
+
 @Composable
-// 🎯 PERUBAHAN 4: Tambahkan parameter onClick dan buat Box clickable
 fun HijauImage(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .width(120.dp)
             .height(50.dp)
-            .clickable(onClick = onClick), // 👈 Memicu navigasi
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -369,16 +301,47 @@ fun HijauImage(onClick: () -> Unit) {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )
-        // Tambahkan Teks "Sign In" di atas tombol
-//        Text(
-//            text = "Sign In",
-//            color = Color.White,
-//            fontWeight = FontWeight.Bold,
-//            fontSize = 18.sp
-//        )
     }
 }
 
+@Composable
+fun SocialLoginButton(
+    text: String,
+    iconResId: Int,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Color(0xFF4285F4)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White,
+            contentColor = Color(0xFF4285F4)
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Image(
+                painter = painterResource(id = iconResId),
+                contentDescription = "Social Logo",
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = text,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color(0xFF4285F4)
+            )
+        }
+    }
+}
 
 @Composable
 fun BottomRegisterText(modifier: Modifier = Modifier, navController: NavHostController) {
@@ -388,12 +351,11 @@ fun BottomRegisterText(modifier: Modifier = Modifier, navController: NavHostCont
         }
         pushStringAnnotation(tag = "REGISTER", annotation = "register_screen")
 
-        // Perubahan dilakukan di sini: Tambahkan textDecoration = TextDecoration.Underline
         withStyle(style = SpanStyle(
             color = Color(0xFFFC7100),
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            textDecoration = TextDecoration.Underline // ✅ Tambahkan garis bawah
+            textDecoration = TextDecoration.Underline
         )) {
             append("Register now")
         }
@@ -411,8 +373,3 @@ fun BottomRegisterText(modifier: Modifier = Modifier, navController: NavHostCont
         }
     )
 }
-
-
-// ⚠️ Catatan: Fungsi MainScreenInHomePage ada di file HomePage.kt Anda.
-// Pastikan file tersebut sudah di-update dan dipindahkan ke package yang sama.
-// Composable wrapper untuk HomePage.kt (agar NavHost bisa memanggil Home Page Anda)
