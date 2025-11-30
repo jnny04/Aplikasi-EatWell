@@ -550,7 +550,7 @@ fun SpinWheel(
                         text = "TAP",
                         color = TapText,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 18.sp,
+                        fontSize = 8.sp,
                         fontFamily = SourceSerifPro
                     )
                 }
