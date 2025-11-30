@@ -28,6 +28,9 @@ import com.example.recappage.data.StreakPreferences
 // ✅ Import Fitur Karina (Descope)
 import com.descope.Descope
 
+// 🔥 IMPORT WAJIB UNTUK SPLASH SCREEN
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
 @AndroidEntryPoint
 class MainActivity : FragmentActivity(), SensorEventListener {
 
@@ -42,10 +45,18 @@ class MainActivity : FragmentActivity(), SensorEventListener {
     private lateinit var streakPrefs: StreakPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 🔥 1. INSTALL SPLASH SCREEN (WAJIB PALING ATAS)
+        // Ini agar logo muncul saat aplikasi baru dibuka
+        installSplashScreen()
+
         super.onCreate(savedInstanceState)
 
+        // 🔥 2. HILANGKAN ACTION BAR SECARA PAKSA
+        // Agar tulisan "RecapPage" di bar abu-abu hilang total
+        actionBar?.hide()
+
         // ======================================================
-        // 🔥 1. INISIALISASI DESCOPE (DARI CODINGAN KARINA)
+        // 🔥 3. INISIALISASI DESCOPE (DARI CODINGAN KARINA)
         // ======================================================
         try {
             Descope.setup(this, projectId = "P35deW4J1H5rkOUS9ZTwb0hD1pbd")
@@ -56,17 +67,16 @@ class MainActivity : FragmentActivity(), SensorEventListener {
         }
 
         // ======================================================
-        // 🔥 2. INISIALISASI SENSOR & STREAK (PUNYA KAMU)
+        // 🔥 4. INISIALISASI SENSOR & STREAK (PUNYA KAMU)
         // ======================================================
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
         streakPrefs = StreakPreferences(this)
 
         // ======================================================
-        // 🔥 3. SET CONTENT (GABUNGAN UI)
+        // 🔥 5. SET CONTENT (GABUNGAN UI)
         // ======================================================
         setContent {
-            // Gunakan Theme Punya Kamu (RecapPageTheme) biar tampilan konsisten
             RecapPageTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -95,7 +105,7 @@ class MainActivity : FragmentActivity(), SensorEventListener {
     }
 
     // ======================================================
-    // 🔥 4. LIFECYCLE METHODS (PUNYA KAMU - WAJIB ADA)
+    // 🔥 LIFECYCLE METHODS (TETAP SAMA)
     // ======================================================
 
     override fun onResume() {
@@ -122,7 +132,7 @@ class MainActivity : FragmentActivity(), SensorEventListener {
     }
 
     // ======================================================
-    // 🔥 5. LOGIKA SENSOR (PUNYA KAMU)
+    // 🔥 LOGIKA SENSOR (TETAP SAMA)
     // ======================================================
 
     override fun onSensorChanged(event: SensorEvent?) {

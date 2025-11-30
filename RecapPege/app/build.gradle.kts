@@ -162,6 +162,8 @@ dependencies {
     implementation("com.descope:descope-kotlin:0.17.5")
     implementation("androidx.browser:browser:1.8.0")
 
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // --- Testing ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
