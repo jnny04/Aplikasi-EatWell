@@ -62,8 +62,6 @@ fun SignInScreen(navController: NavHostController) {
     // --- SETUP BIOMETRIK ---
     val fragmentActivity = context as? FragmentActivity
     val isBiometricAvailable = remember { BiometricHelper.isBiometricAvailable(context) }
-    // Tombol biometrik muncul jika HP support biometrik (Login pertama kali pun bisa muncul untuk setup/cek)
-    // Atau bisa diubah logikanya: `&& auth.currentUser != null` jika hanya ingin muncul setelah pernah login
     val showBiometricButton = isBiometricAvailable
 
     val performBiometricLogin = {
@@ -85,7 +83,7 @@ fun SignInScreen(navController: NavHostController) {
 
     // --- SETUP DESCOPE (GOOGLE) ---
     val performDescopeLogin: () -> Unit = {
-        val projectId = "P35deW4J1H5rkOUS9ZTwb0hD1pbd" // Pastikan ID ini benar
+        val projectId = "P35deW4J1H5rkOUS9ZTwb0hD1pbd"
         val flowUrl = "https://api.descope.com/login/$projectId?flow=sign-up-or-in"
 
         coroutineScope.launch {
@@ -141,14 +139,16 @@ fun SignInScreen(navController: NavHostController) {
             Image(
                 painter = painterResource(id = R.drawable.eatwelllogo),
                 contentDescription = "Eatwell Logo",
-                modifier = Modifier.height(150.dp)
+                modifier = Modifier.height(120.dp),
+                contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // 🔥 PERBAIKAN 2: Jarak spacer dikecilkan (16 -> 4dp) agar lebih mepet
+            Spacer(modifier = Modifier.height(6.dp))
 
             WelcomeText()
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
             // 🔹 Form Section
             Column(
@@ -236,7 +236,7 @@ fun SignInScreen(navController: NavHostController) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // ✅ ROW TOMBOL UTAMA (SIGN IN + FINGERPRINT)
                 Row(
@@ -244,26 +244,25 @@ fun SignInScreen(navController: NavHostController) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // 1. Tombol Sign In (Hijau Image)
+                    // 1. Tombol Sign In
                     HijauImage(onClick = performSignIn)
 
-                    // 2. Tombol Biometrik (Hanya muncul jika HP support)
+                    // 2. Tombol Biometrik
                     if (showBiometricButton) {
-                        Spacer(modifier = Modifier.width(16.dp)) // Jarak antar tombol
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                        // 🔥 ICON BIOMETRIK BESAR TANPA KOTAK
                         Icon(
                             painter = painterResource(id = R.drawable.fingerprint),
                             contentDescription = "Biometric Login",
-                            tint = Color(0xFF5CA135), // Hijau Brand
+                            tint = Color(0xFF5CA135),
                             modifier = Modifier
-                                .size(48.dp) // Ukuran besar agar seimbang dengan tombol Sign In
+                                .size(48.dp)
                                 .clickable { performBiometricLogin() }
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(15.dp))
 
                 // PEMBATAS "OR"
                 Row(
@@ -282,7 +281,7 @@ fun SignInScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // TOMBOL GOOGLE (DESCOPE)
+                // TOMBOL GOOGLE
                 SocialLoginButton(
                     text = "Continue with Google",
                     iconResId = R.drawable.googleicon,

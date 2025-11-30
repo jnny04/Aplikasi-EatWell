@@ -1,15 +1,21 @@
 [versions]
-agp = "8.2.2"
-kotlin = "2.0.0"
-coreKtx = "1.13.1"
+agp = "8.7.2"
+kotlin = "2.0.21"
+# 👇 UPDATE: Core KTX harus 1.15.0 agar support SDK 35
+coreKtx = "1.15.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
-espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.8.2"
-activityCompose = "1.9.0"
-composeBom = "2024.06.00"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+# 👇 UPDATE: Lifecycle terbaru
+lifecycleRuntimeKtx = "2.8.7"
+# 👇 UPDATE: Activity Compose terbaru
+activityCompose = "1.9.3"
+# 👇 UPDATE: Compose BOM terbaru (PENTING untuk Kotlin 2.0)
+composeBom = "2024.11.00"
 hilt = "2.51.1"
-ksp = "2.0.0-1.0.21"
+# 👇 UPDATE: KSP harus pasangan Kotlin 2.0.21
+ksp = "2.0.21-1.0.25"
+datastore = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -18,6 +24,7 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
 # Compose
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -35,10 +42,7 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.r
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Plugin Compose Compiler Baru (Wajib untuk Kotlin 2.0)
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
-# Hilt plugin
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-
-# KSP plugin
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
