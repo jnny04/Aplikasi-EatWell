@@ -2,12 +2,11 @@ package com.example.recappage.ui.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.recappage.data.StreakPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
+// Pastikan ini menerima Context
 class StreakViewModel(context: Context) : ViewModel() {
 
     private val streakPrefs = StreakPreferences(context)
@@ -16,13 +15,13 @@ class StreakViewModel(context: Context) : ViewModel() {
     val streakDays = _streakDays.asStateFlow()
 
     init {
-        updateStreak()
+        // Load awal saat VM dibuat
+        refreshStreak()
     }
 
-    fun updateStreak() {
-        viewModelScope.launch {
-            val updated = streakPrefs.updateStreak()
-            _streakDays.value = updated
-        }
+    // Ubah nama jadi refreshStreak agar lebih jelas
+    fun refreshStreak() {
+        val updated = streakPrefs.updateStreak()
+        _streakDays.value = updated
     }
 }

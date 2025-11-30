@@ -56,6 +56,7 @@ import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.MainViewModel
 import com.example.recappage.ui.viewmodel.FavouriteViewModel
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
+import com.example.recappage.util.ImageHelper
 import com.example.recappage.util.NetworkResult
 import java.net.URLDecoder
 
@@ -78,6 +79,9 @@ fun FoodLibraryPage(
 
     var showPopup by remember { mutableStateOf(false) }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
+
+    // 🔥 STATE UNTUK AVAILABLE ORDER TOGGLE (UI ONLY)
+    var isOrderAvailable by remember { mutableStateOf(false) }
 
     val filterIcon = if (showFilterPopup) R.drawable.filter_on else R.drawable.filter
 
@@ -108,8 +112,6 @@ fun FoodLibraryPage(
     val recipesState by viewModel.recipesResponse.observeAsState()
 
     val scrollState = rememberLazyGridState()
-
-    // ✅ Snackbar untuk error
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -144,7 +146,6 @@ fun FoodLibraryPage(
         }
     }
 
-    // ✅ Tampilkan snackbar ramah kalau error
     LaunchedEffect(recipesState) {
         if (recipesState is NetworkResult.Error<*>) {
             snackbarHostState.showSnackbar(
@@ -153,270 +154,257 @@ fun FoodLibraryPage(
         }
     }
 
-    Scaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        topBar = {
-            TopBorder(
-                navController = navController,
-                photoUrl = profilePicUrl
-            )
-        },
-        bottomBar = {
-            Component18(
-                modifier = Modifier.zIndex(3f),
-                navController = navController
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        }
-    ) { padding ->
+    // ============================
+    //  WRAPPER BOX UTAMA
+    // ============================
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        Box(
-            modifier = Modifier
+        Scaffold(
+            modifier = modifier
                 .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+                .background(MaterialTheme.colorScheme.background),
+            topBar = {
+                TopBorder(
+                    navController = navController,
+                    photoUrl = profilePicUrl
+                )
+            },
+            bottomBar = {
+                Component18(
+                    modifier = Modifier.zIndex(3f),
+                    navController = navController
+                )
+            },
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            }
+        ) { padding ->
 
-            // 1. KATEGORI (LazyRow)
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(y = 10.dp)
-                    .fillMaxWidth()
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(MaterialTheme.colorScheme.background)
             ) {
-                items(topCategories.size) { index ->
-                    val category = topCategories[index]
-                    CategoryChip(
-                        text = category,
-                        selected = selectedTop == category,
-                        onClick = {
-                            isSearchMode = false
-                            queryText = ""
-                            selectedTop = category
-                            val tag = when (category) {
-                                "Breakfast" -> "breakfast"
-                                "Heavy Meal" -> "main course"
-                                "Snacks" -> "snack"
-                                "Dessert" -> "dessert"
-                                else -> null
-                            }
-                            if (category == "All") {
-                                viewModel.loadAllRecipes()
-                            } else {
-                                viewModel.loadRecipesByTag(tag)
+
+                // =====================
+//  KATEGORI + SEARCH ICON
+// =====================
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .offset(y = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    // ============================
+                    // 1. ROW KATEGORI + SEARCH ICON
+                    // ============================
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        // === KATEGORI ===
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            items(topCategories.size) { index ->
+                                val category = topCategories[index]
+                                CategoryChip(
+                                    text = category,
+                                    selected = selectedTop == category,
+                                    onClick = {
+                                        isSearchMode = false
+                                        queryText = ""
+                                        selectedTop = category
+                                        val tag = when (category) {
+                                            "Breakfast" -> "breakfast"
+                                            "Heavy Meal" -> "main course"
+                                            "Snacks" -> "snack"
+                                            "Dessert" -> "dessert"
+                                            else -> null
+                                        }
+                                        if (category == "All") {
+                                            viewModel.loadAllRecipes()
+                                        } else {
+                                            viewModel.loadRecipesByTag(tag)
+                                        }
+                                    }
+                                )
                             }
                         }
-                    )
-                }
-            }
 
-            // 2. SEARCH BAR & FILTER ROW
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = 60.dp)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(38.dp)
-                        .border(1.dp, Color(0xFFFC7100), RoundedCornerShape(20.dp))
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(20.dp)
-                        )
-                        .padding(horizontal = 0.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    // Placeholder Text
-                    if (queryText.isEmpty()) {
-                        Text(
-                            text = "Search recipes...",
-                            color = Color.Gray,
-                            fontSize = 12.sp,
-                            fontFamily = SourceSans3,
-                            modifier = Modifier.padding(start = 12.dp)
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // === SEARCH ICON (tetap ada) ===
+                        Image(
+                            painter = painterResource(id = R.drawable.search),
+                            contentDescription = "Search",
+                            modifier = Modifier
+                                .size(25.dp)
+                                .clickable {
+                                    // 🔥 PERUBAHAN DI SINI: Navigasi ke layar pencarian
+                                    navController.navigate("pencarian")
+                                }
                         )
                     }
+                }
+                // =====================
+//  AVAILABLE (kiri) + FILTER (kanan)
+// =====================
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = 60.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
 
-                    // Input Text
-                    BasicTextField(
-                        value = queryText,
-                        onValueChange = { queryText = it },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 12.sp,
-                            fontFamily = SourceSans3
+                    // === AVAILABLE ORDER (KIRI, DIPERBESAR PAKSA) ===
+                    // === AVAILABLE ORDER (TANPA ANIMASI) ===
+                    Image(
+                        painter = painterResource(
+                            id = if (isOrderAvailable) R.drawable.avail_order_on
+                            else R.drawable.avail_order_off
                         ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(
-                            onSearch = {
-                                if (queryText.isNotEmpty()) {
-                                    isSearchMode = true
-                                    selectedTop = "All"
-                                    viewModel.searchRecipesByKeyword(queryText)
-                                } else {
-                                    isSearchMode = false
-                                    viewModel.loadAllRecipes()
-                                }
-                            }
-                        ),
+                        contentDescription = "Available For Order",
+
+                        contentScale = ContentScale.FillBounds,
+
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp, end = 65.dp)
+                            .width(if (isOrderAvailable) 230.dp else 224.dp)
+                            .height(if (isOrderAvailable) 40.dp else 36.dp)
+
+                            .clickable {
+                                isOrderAvailable = !isOrderAvailable
+                            }
                     )
 
-                    // IKON MIKROFON
-                    Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = "Voice Search",
-                        tint = Color(0xFFFC7100),
+                    // === FILTER (KANAN, diperbesar) ===
+                    Image(
+                        painter = painterResource(id = filterIcon),
+                        contentDescription = "Filter",
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 36.dp)
-                            .size(20.dp)
-                            .clickable {
-                                val intent =
-                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                        )
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_PROMPT,
-                                            "Sebutkan resep..."
+                            .size(25.dp)
+                            .clickable { showFilterPopup = true }
+                    )
+                }
+
+                // =====================
+                //  GRID RESEP
+                // =====================
+                val state = recipesState
+                if (state is NetworkResult.Loading && paginatedRecipes.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF5CA135))
+                    }
+                } else if (state is NetworkResult.Error<*> && paginatedRecipes.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "⚠️ ${state.message ?: "Terjadi kesalahan saat memuat resep"}",
+                            color = Color.Red,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    if (paginatedRecipes.isNotEmpty()) {
+                        LazyVerticalGrid(
+                            state = scrollState,
+                            columns = GridCells.Fixed(2),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset(y = 110.dp)
+                                .padding(horizontal = 12.dp)
+                                .padding(bottom = 80.dp)
+                        ){
+                            items(paginatedRecipes.size) { index ->
+                                val recipe = paginatedRecipes[index]
+                                RecipeCard(
+                                    recipe = recipe,
+                                    navController = navController,
+                                    favVM = favVM,
+                                    onSelect = {
+                                        selectedRecipe = recipe
+                                        viewModel.loadRecipeDetail(recipe.id)
+                                        showPopup = true
+                                    }
+                                )
+                            }
+                            if (isPaginating) {
+                                item(span = { GridItemSpan(2) }) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF5CA135),
+                                            modifier = Modifier.size(24.dp)
                                         )
                                     }
-                                voiceLauncher.launch(intent)
-                            }
-                    )
-
-                    // Ikon Search
-                    Image(
-                        painter = painterResource(id = R.drawable.search_icon),
-                        contentDescription = "Search",
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 12.dp)
-                            .size(16.dp)
-                            .clickable {
-                                if (queryText.isNotEmpty()) {
-                                    isSearchMode = true
-                                    selectedTop = "All"
-                                    viewModel.searchRecipesByKeyword(queryText)
-                                }
-                            }
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Image(
-                    painter = painterResource(id = filterIcon),
-                    contentDescription = "Filter",
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clickable { showFilterPopup = true }
-                )
-            }
-
-            // 3. GRID RESEP
-            val state = recipesState
-            if (state is NetworkResult.Loading && paginatedRecipes.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFF5CA135))
-                }
-            } else if (state is NetworkResult.Error<*> && paginatedRecipes.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "⚠️ ${state.message ?: "Terjadi kesalahan saat memuat resep"}",
-                        color = Color.Red,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                if (paginatedRecipes.isNotEmpty()) {
-                    LazyVerticalGrid(
-                        state = scrollState,
-                        columns = GridCells.Fixed(2),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .offset(y = 115.dp)
-                            .padding(horizontal = 12.dp)
-                            .padding(bottom = 80.dp)
-                    ) {
-                        items(paginatedRecipes.size) { index ->
-                            val recipe = paginatedRecipes[index]
-                            RecipeCard(
-                                recipe = recipe,
-                                navController = navController,
-                                favVM = favVM,
-                                onSelect = {
-                                    selectedRecipe = recipe
-                                    viewModel.loadRecipeDetail(recipe.id)
-                                    showPopup = true
-                                }
-                            )
-                        }
-                        if (isPaginating) {
-                            item(span = { GridItemSpan(2) }) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = Color(0xFF5CA135),
-                                        modifier = Modifier.size(24.dp)
-                                    )
                                 }
                             }
                         }
                     }
                 }
             }
+        }
 
-            if (showFilterPopup) {
+        // ==========================
+        //  FILTER POPUP (DI LUAR SCAFFOLD)
+        // ==========================
+        if (showFilterPopup) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(20f)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .zIndex(10f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f))
-                            .clickable { showFilterPopup = false }
-                    )
-                    FilterDialog(
-                        onDismiss = { showFilterPopup = false },
-                        onApply = { filter ->
-                            isSearchMode = false
-                            selectedTop = "All"
-                            queryText = ""
-                            viewModel.loadWithFilter(filter)
-                            showFilterPopup = false
-                        }
-                    )
-                }
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable { showFilterPopup = false }
+                )
+                FilterDialog(
+                    onDismiss = { showFilterPopup = false },
+                    onApply = { filter ->
+                        isSearchMode = false
+                        selectedTop = "All"
+                        queryText = ""
+                        viewModel.loadWithFilter(filter)
+                        showFilterPopup = false
+                    }
+                )
             }
+        }
 
-            if (showPopup && selectedRecipe != null) {
+        // ==========================
+        //  FOOD PREVIEW POPUP
+        // ==========================
+        if (showPopup && selectedRecipe != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(20f)
+            ) {
                 FoodPreviewPopup(
                     image = selectedRecipe!!.image,
                     title = selectedRecipe!!.title,
@@ -429,7 +417,10 @@ fun FoodLibraryPage(
                     },
                     onOrderClick = {
                         val intent =
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://food.grab.com/id/en/")
+                            )
                         context.startActivity(intent)
                     }
                 )
@@ -457,7 +448,7 @@ fun RecipeCard(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
-                .data(recipe.image)
+                .data(ImageHelper.optimizeUrl(recipe.image))
                 .crossfade(true)
                 .build(),
             contentDescription = recipe.title,
@@ -484,7 +475,10 @@ fun RecipeCard(
                     .size(22.dp)
                     .clickable {
                         val intent =
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://food.grab.com/id/en/"))
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://food.grab.com/id/en/")
+                            )
                         context.startActivity(intent)
                     }
             )

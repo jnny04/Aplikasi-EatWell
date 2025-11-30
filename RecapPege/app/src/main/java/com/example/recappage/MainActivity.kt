@@ -6,8 +6,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-// import androidx.activity.ComponentActivity <-- INI DIGANTI
-import androidx.fragment.app.FragmentActivity // 👈 INI YANG BARU
+import android.util.Log
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,21 +20,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.rememberNavController
 import com.example.recappage.ui.navigation.AppNavigation
 import com.example.recappage.ui.theme.RecapPageTheme
-import com.example.recappage.utils.AmbientLightPreferences
 import dagger.hilt.android.AndroidEntryPoint
 
+// ✅ Tambahkan ini
+import com.example.recappage.data.StreakPreferences
+
 @AndroidEntryPoint
-// 👇 UBAH ComponentActivity MENJADI FragmentActivity
 class MainActivity : FragmentActivity(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
     private var proximitySensor: Sensor? = null
 
-    // Status objek dekat atau tidak
     private var isObjectNear by mutableStateOf(false)
-
-    // Status apakah fitur proximity diaktifkan user
     private var isSensorFeatureEnabled by mutableStateOf(true)
+
+    // ✅ Tambahkan Streak Prefs di kode lama
+    private lateinit var streakPrefs: StreakPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,8 +46,8 @@ class MainActivity : FragmentActivity(), SensorEventListener {
         // Ambil sensor proximity
         proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
 
-        // Ambil preferensi user (ON / OFF)
-        isSensorFeatureEnabled = AmbientLightPreferences.isEnabled(this)
+        // ✅ Inisialisasi StreakPreferences
+        streakPrefs = StreakPreferences(this)
 
         setContent {
             RecapPageTheme {
@@ -58,19 +59,14 @@ class MainActivity : FragmentActivity(), SensorEventListener {
 
                     Box(modifier = Modifier.fillMaxSize()) {
 
-                        // Semua halaman aplikasi
                         AppNavigation(navController = navController)
 
-                        // =============================
-                        // EFEK DIM SAAT OBJEK MENDEKAT
-                        // =============================
+                        // Overlay redup jika objek dekat
                         if (isSensorFeatureEnabled && isObjectNear) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(
-                                        Color.Black.copy(alpha = 0.45f)
-                                    )
+                                    .background(Color.Black.copy(alpha = 0.45f))
                             )
                         }
                     }
@@ -82,7 +78,7 @@ class MainActivity : FragmentActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
 
-        // Aktifkan sensor hanya jika fitur ON
+        // 🔥 Tetap: aktifkan sensor
         if (isSensorFeatureEnabled && proximitySensor != null) {
             sensorManager.registerListener(
                 this,
@@ -90,6 +86,10 @@ class MainActivity : FragmentActivity(), SensorEventListener {
                 SensorManager.SENSOR_DELAY_NORMAL
             )
         }
+
+        // 🔥 Tambahan: update streak otomatis setiap kali app dibuka
+        val newStreak = streakPrefs.updateStreak()
+        Log.d("LIFECYCLE_CHECK", "🎯 Streak ter-update: $newStreak")
     }
 
     override fun onPause() {
@@ -100,13 +100,16 @@ class MainActivity : FragmentActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_PROXIMITY) {
             val distance = event.values[0]
+            val maxRange = event.sensor.maximumRange
 
-            // Jika jarak sangat kecil → dianggap objek dekat
-            isObjectNear = distance < event.sensor.maximumRange
+            Log.d(
+                "PROXIMITY_TEST",
+                "🔍 Sensor Mendeteksi: $distance cm → ${if(distance < maxRange) "DEKAT" else "JAUH"}"
+            )
+
+            isObjectNear = distance < maxRange
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Tidak digunakan
-    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 }

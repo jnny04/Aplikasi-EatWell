@@ -52,6 +52,9 @@ fun ProfileScreen(
 ) {
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        streakViewModel.refreshStreak()
+    }
 
     // Load data
     val streakDays by streakViewModel.streakDays.collectAsState()

@@ -1,312 +1,397 @@
 package com.example.recappage.ui.screens
 
+import android.Manifest
+import android.content.Context
 import android.graphics.Bitmap
-import android.net.Uri
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.util.Log
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil.compose.rememberAsyncImagePainter
 import com.example.recappage.R
+// Import Popup
+import com.example.recappage.ui.components.DetectionResultPopup
 import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.components.TopBorder
+import com.example.recappage.ui.theme.SourceSans3
+import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
-import kotlinx.coroutines.delay
+import com.example.recappage.ui.viewmodel.ScanFoodViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
 
+enum class ScannerUiState {
+    Idle, Camera, Loading, Result
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun ScannerPage(
     navController: NavHostController,
-    // ✅ Tambahkan ViewModel untuk mengambil data profil
+    viewModel: ScanFoodViewModel = hiltViewModel(),
     regViewModel: RegistrationViewModel = hiltViewModel()
 ) {
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var bitmapPreview by remember { mutableStateOf<Bitmap?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    var showResultPopup by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    // Buat coroutine scope
-    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { regViewModel.loadUserProfile() }
+    val photoUrl by regViewModel.profileImageUrl
+    var currentUiState by remember { mutableStateOf(ScannerUiState.Idle) }
+    val permissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
-    // ✅ Load data user profile saat halaman dibuka
-    LaunchedEffect(Unit) {
-        regViewModel.loadUserProfile()
+    val isLoading by viewModel.isLoading
+    val result by viewModel.detectionResult
+    val error by viewModel.errorMessage
+
+    // LOGIKA STATE
+    LaunchedEffect(isLoading, result, error) {
+        if (!isLoading && error != null) {
+            Toast.makeText(context, "Gagal: $error", Toast.LENGTH_LONG).show()
+        }
+        currentUiState = when {
+            isLoading -> ScannerUiState.Loading
+            result != null -> ScannerUiState.Result
+            else -> ScannerUiState.Idle
+        }
     }
-    // ✅ Ambil URL foto profil dari state ViewModel
-    val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // Launcher kamera
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            isLoading = true
-            bitmapPreview = bitmap
-
-            // Jalankan delay di coroutine (Simulasi scan)
-            scope.launch {
-                delay(2000) // simulasi loading 2 detik
-                isLoading = false
-                showResultPopup = true
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                if (bitmap != null) {
+                    viewModel.scanImage(bitmap)
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     Scaffold(
+        topBar = {
+            if (currentUiState == ScannerUiState.Idle || currentUiState == ScannerUiState.Result || currentUiState == ScannerUiState.Loading) {
+                TopBorder(navController = navController, showProfile = true, photoUrl = photoUrl)
+            }
+        },
         bottomBar = {
-            Component18(navController = navController)
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // ✅ Update TopBorder dengan photoUrl
-            TopBorder(
-                navController = navController,
-                photoUrl = profilePicUrl
-            )
+            if (currentUiState == ScannerUiState.Idle || currentUiState == ScannerUiState.Result || currentUiState == ScannerUiState.Loading) {
+                Component18(navController = navController)
+            }
+        },
+        containerColor = Color.White
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
 
-            // Header
-            Image(
-                painter = painterResource(id = R.drawable.lets_check),
-                contentDescription = "Lets Check",
-                modifier = Modifier
-                    .padding(top = 24.dp, start = 20.dp, bottom = 12.dp)
-                    .align(Alignment.Start)
-                    .width(240.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Kotak preview foto
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(500.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isLoading -> {
-                        CircularProgressIndicator(color = Color(0xFFFF6600))
+            // LAYER 1: TAMPILAN UTAMA (IDLE)
+            if (currentUiState != ScannerUiState.Camera) {
+                ScannerIdleContent(
+                    paddingValues = paddingValues,
+                    navController = navController,
+                    onGalleryClick = { galleryLauncher.launch("image/*") },
+                    onCameraClick = {
+                        if (permissionState.status.isGranted)
+                            currentUiState = ScannerUiState.Camera
+                        else permissionState.launchPermissionRequest()
                     }
+                )
+            }
 
-                    bitmapPreview != null -> {
-                        Image(
-                            painter = rememberAsyncImagePainter(bitmapPreview),
-                            contentDescription = "Preview",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+            // LAYER 2: OVERLAYS
+            if (currentUiState == ScannerUiState.Camera) {
+                CameraView({ bmp -> viewModel.scanImage(bmp) }, { currentUiState = ScannerUiState.Idle })
+            }
 
-                    else -> {
-                        Text("No Image", color = Color.Gray)
-                    }
+            if (currentUiState == ScannerUiState.Loading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f))
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFFC7100))
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if (currentUiState == ScannerUiState.Result) {
+                result?.let { item ->
+                    DetectionResultPopup(
+                        item = item,
+                        onDismiss = { viewModel.resetState() },
+                        onAddClick = {
+                            viewModel.saveResultToDiary(item)
+                            navController.popBackStack()
+                        },
+                        onRetakeClick = { viewModel.resetState() }
+                    )
+                }
+            }
+        }
+    }
+}
 
-            // Tombol Back, Camera, Retake
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp, vertical = 16.dp)
+// 🔥 KONTEN UTAMA SCANNER
+@Composable
+fun ScannerIdleContent(
+    paddingValues: PaddingValues,
+    navController: NavHostController,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .padding(paddingValues)
+            .fillMaxSize()
+            .background(Color.White),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Let’s check what you’re eating…",
+            fontFamily = SourceSerifPro,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = Color(0xFF5CA135),
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // BOX GALERI
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(350.dp)
+                .padding(horizontal = 16.dp)
+                .border(
+                    width = 2.dp,
+                    color = Color(0xFF5CA135).copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onGalleryClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.Image,
+                    contentDescription = null,
+                    modifier = Modifier.size(120.dp),
+                    tint = Color(0xFF5CA135).copy(alpha = 0.4f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 🔥 PERUBAHAN DI SINI: DIPISAH JADI 2 TEXT
+
+                // 1. Judul Besar
+                Text(
+                    text = "AI FOOD SCANNER",
+                    textAlign = TextAlign.Center,
+                    fontFamily = SourceSans3,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp, // Ukuran Besar
+                    color = Color(0xFF5CA135),
+                    letterSpacing = 2.sp
+                )
+
+                // 2. Sub-judul Kecil
+                Text(
+                    text = "(Tap to Upload)",
+                    textAlign = TextAlign.Center,
+                    fontFamily = SourceSans3,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp, // 🔥 UKURAN LEBIH KECIL
+                    color = Color(0xFF5CA135),
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(top = 4.dp) // Jarak sedikit dari judul
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        InfoNote()
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // AREA TOMBOL BAWAH (BACK, CAMERA, LOG)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 28.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // 1. Tombol Back (Kiri)
+            Column(
+                modifier = Modifier.align(Alignment.CenterStart),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.back),
-                    contentDescription = "Back",
+                Icon(
+                    painter = painterResource(id = R.drawable.backbutton),
+                    contentDescription = null,
+                    tint = Color(0xFF5CA135),
                     modifier = Modifier
                         .size(40.dp)
                         .clickable { navController.popBackStack() }
                 )
-
-                Image(
-                    painter = painterResource(id = R.drawable.camera),
-                    contentDescription = "Camera",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clickable { launcher.launch(null) }
-                )
-
-                Image(
-                    painter = painterResource(id = R.drawable.retake),
-                    contentDescription = "Retake",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clickable {
-                            bitmapPreview = null
-                            imageUri = null
-                        }
-                )
+                Text("Back", color = Color(0xFF5CA135), fontSize = 11.sp, fontFamily = SourceSans3)
             }
-        }
 
-        // POPUP RESULT
-        if (showResultPopup) {
+            // ============================================
+            // 🔥 2. TOMBOL KAMERA (SOLUSI FINAL UKURAN)
+            // ============================================
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f)),
+                    .align(Alignment.Center)
+                    .wrapContentSize() // Biarkan box menyesuaikan ukuran konten
+                    .clickable { onCameraClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.camera),
+                    contentDescription = "camera",
+                    // 🔥 FORCING SIZE: Kita paksa Gambarnya langsung jadi 130dp
+                    // ContentScale.FillBounds akan menarik gambar sampai ke pinggir
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.requiredSize(90.dp)
+                )
+            }
+
+            // 3. Tombol Log Manually (Kanan)
+            Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                Button(
+                    onClick = { navController.navigate("intake_detail") },
                     modifier = Modifier
-                        .width(300.dp)
-                        .wrapContentHeight()
-                        .background(Color.White, RoundedCornerShape(16.dp))
-                        .padding(20.dp)
+                        .height(40.dp)
+                        .widthIn(min = 90.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5CA135)),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    // Tombol X (close)
-                    Image(
-                        painter = painterResource(id = R.drawable.x),
-                        contentDescription = "Close",
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(20.dp)
-                            .clickable { showResultPopup = false }
+                    Icon(
+                        painter = painterResource(id = R.drawable.plus),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(10.dp)
                     )
-
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Foto hasil kamera (255.dp)
-                        if (bitmapPreview != null) {
-                            Image(
-                                painter = rememberAsyncImagePainter(bitmapPreview),
-                                contentDescription = "Food Result",
-                                modifier = Modifier
-                                    .height(255.dp)
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .height(255.dp)
-                                    .fillMaxWidth()
-                                    .background(Color.LightGray, RoundedCornerShape(12.dp))
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Nama makanan (BOLD & besar)
-                        Text(
-                            text = "Chicken Salad Wrap",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Nutrisi (kiri label, kanan value)
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Carbs", fontSize = 14.sp, color = Color.Black)
-                                Text("100 g", fontSize = 14.sp, color = Color.Black)
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Protein", fontSize = 14.sp, color = Color.Black)
-                                Text("100 g", fontSize = 14.sp, color = Color.Black)
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Fat", fontSize = 14.sp, color = Color.Black)
-                                Text("100 g", fontSize = 14.sp, color = Color.Black)
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "Total Calories",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                                Text(
-                                    "100 kcal",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Add to today's intake (pakai gambar, dibesarin)
-                        Image(
-                            painter = painterResource(id = R.drawable.todays_intake),
-                            contentDescription = "Add to today's intake",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .clickable {
-                                    // TODO: action add to intake
-                                }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Retake button (gambar)
-                        Image(
-                            painter = painterResource(id = R.drawable.retake),
-                            contentDescription = "Retake",
-                            modifier = Modifier
-                                .size(45.dp)
-                                .clickable {
-                                    bitmapPreview = null
-                                    showResultPopup = false
-                                    launcher.launch(null)
-                                }
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Log manually",
+                        color = Color.White,
+                        fontFamily = SourceSans3,
+                        fontSize = 10.sp,
+                        maxLines = 1
+                    )
                 }
             }
         }
+    }
+}
+
+// Camera Helper
+@Composable
+fun CameraView(onImageCaptured: (Bitmap) -> Unit, onClose: () -> Unit) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
+    val scope = rememberCoroutineScope()
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            factory = { ctx ->
+                val previewView = PreviewView(ctx).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                }
+                val executor = ContextCompat.getMainExecutor(ctx)
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+                    imageCapture = ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
+                    } catch (e: Exception) { Log.e("CameraX", "Bind failed", e) }
+                }, executor)
+                previewView
+            }, modifier = Modifier.fillMaxSize()
+        )
+        IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopStart).padding(16.dp).statusBarsPadding()) {
+            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White, modifier = Modifier.size(32.dp))
+        }
+        Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 50.dp).size(80.dp).clip(CircleShape).background(Color.White).clickable {
+            scope.launch { captureImage(context, imageCapture, onImageCaptured) }
+        }.padding(5.dp)) {
+            Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0xFFFC7100)))
+        }
+    }
+}
+
+private fun captureImage(context: Context, imageCapture: ImageCapture?, onImageCaptured: (Bitmap) -> Unit) {
+    val executor = ContextCompat.getMainExecutor(context)
+    imageCapture?.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
+        override fun onCaptureSuccess(image: ImageProxy) {
+            val buffer = image.planes[0].buffer
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+            var bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val rotation = image.imageInfo.rotationDegrees
+            if (rotation != 0) {
+                val matrix = Matrix()
+                matrix.postRotate(rotation.toFloat())
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            }
+            onImageCaptured(bitmap)
+            image.close()
+        }
+        override fun onError(exception: ImageCaptureException) {}
+    })
+}
+
+@Composable
+fun InfoNote() {
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(20.dp).border(1.4.dp, Color(0xFF8C8C8C), CircleShape), contentAlignment = Alignment.Center) {
+            Text("!", color = Color(0xFF8C8C8C), fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.offset(y = (-1).dp))
+        }
+        Spacer(modifier = Modifier.width(6.dp))
+        Text("Note: Calorie values shown are estimates, meant to help you track your intake easily.", fontSize = 10.sp, fontFamily = SourceSans3, color = Color.Gray, lineHeight = 12.sp, modifier = Modifier.padding(top = 1.dp))
     }
 }

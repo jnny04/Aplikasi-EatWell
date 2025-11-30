@@ -55,7 +55,6 @@ fun SignInScreen(navController: NavHostController) {
     // --- BIOMETRIK SETUP ---
     val fragmentActivity = context as? FragmentActivity
     val isBiometricAvailable = remember { BiometricHelper.isBiometricAvailable(context) }
-    // Cek apakah user pernah login sebelumnya untuk menampilkan tombol
     val showBiometricButton = isBiometricAvailable && auth.currentUser != null
 
     val performBiometricLogin = {

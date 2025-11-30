@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log // ✅ Import Log untuk pembuktian
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -106,11 +107,17 @@ class MainViewModel @Inject constructor(
         recipesResponse.value = NetworkResult.Loading()
 
         if (!hasInternetConnection()) {
+            // 🔥 LOG BUKTI: Koneksi Mati -> Load Cache
+            Log.e("DB_CACHE_TEST", "❌ INTERNET MATI: Beralih ke Database Lokal (Offline Mode).")
+
             loadFromCache() // Jika offline, ambil dari cache
             return
         }
 
         try {
+            // 🔥 LOG BUKTI: Koneksi Hidup -> Ambil API
+            Log.d("DB_CACHE_TEST", "✅ INTERNET AKTIF: Mengambil data terbaru dari API.")
+
             val response = if (useComplexSearch) {
                 repository.remote.searchRecipes(queries)
             } else {
@@ -252,6 +259,9 @@ class MainViewModel @Inject constructor(
             if (cached.isNotEmpty()) {
                 val recipes = cached.map { it.toRecipe() }
 
+                // 🔥 LOG BUKTI: Data berhasil diambil dari DB
+                Log.d("DB_CACHE_TEST", "📂 DATA DITEMUKAN DI DB LOKAL: ${recipes.size} resep dimuat tanpa internet.")
+
                 // Update State Response
                 recipesResponse.postValue(NetworkResult.Success(FoodRecipes(recipes)))
 
@@ -259,6 +269,8 @@ class MainViewModel @Inject constructor(
                 _paginatedRecipes.clear()
                 _paginatedRecipes.addAll(recipes)
             } else {
+                // 🔥 LOG BUKTI: DB Kosong
+                Log.e("DB_CACHE_TEST", "⚠️ DB LOKAL KOSONG: Tidak ada data yang bisa ditampilkan.")
                 recipesResponse.postValue(NetworkResult.Error("No Internet & No Cache"))
             }
         }

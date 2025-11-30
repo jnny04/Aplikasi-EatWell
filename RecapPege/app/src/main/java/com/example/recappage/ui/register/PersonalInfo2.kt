@@ -1,4 +1,4 @@
-package com.example.recappage.ui.register // 👈 Pastikan package Anda konsisten
+package com.example.recappage.ui.register
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,10 +25,9 @@ import com.example.recappage.ui.components.TopBorder
 
 
 @Composable
-fun PersonalInfo2Screen(navController: NavHostController, viewModel: RegistrationViewModel) { // 👈 Tambah viewModel
+fun PersonalInfo2Screen(navController: NavHostController, viewModel: RegistrationViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        // 🔽 TAMBAHKAN 'topBar' INI 🔽
         topBar = {
             TopBorder(navController = navController, showProfile = false)
         }
@@ -37,7 +36,7 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color.White), // 👈 TAMBAHKAN BACKGROUND DI SINI
+                .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -51,7 +50,7 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
                 verticalArrangement = Arrangement.Top
             ) {
 
-                // 👈 PERUBAHAN 1: Buat logika Toggle untuk Alergi
+                // Logika Toggle untuk Alergi
                 val onAllergyToggle: (String) -> Unit = { allergyName ->
                     val currentAllergies = viewModel.allergies.value
                     viewModel.allergies.value = if (currentAllergies.contains(allergyName)) {
@@ -62,7 +61,6 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
                 }
 
                 // 1. Alergi Section
-                // 👈 Berikan state dan event ke AllergiesSection
                 AllergiesSection(
                     selectedAllergies = viewModel.allergies.value,
                     onAllergyToggle = onAllergyToggle
@@ -70,7 +68,7 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
 
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // 👈 PERUBAHAN 2: Buat logika Toggle untuk Diet
+                // Logika Toggle untuk Diet
                 val onDietToggle: (String) -> Unit = { dietName ->
                     val currentDiets = viewModel.diets.value
                     viewModel.diets.value = if (currentDiets.contains(dietName)) {
@@ -81,12 +79,11 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
                 }
 
                 // 2. Dietary Style Section
-                // 👈 Berikan state dan event ke DietarySection
                 DietarySection(
                     navController = navController,
                     modifier = Modifier.weight(1f),
-                    selectedDiets = viewModel.diets.value, // 👈 Beri state
-                    onDietToggle = onDietToggle // 👈 Beri event
+                    selectedDiets = viewModel.diets.value,
+                    onDietToggle = onDietToggle
                 )
             }
         }
@@ -98,7 +95,6 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
 // =================================================================
 
 @Composable
-// 👈 PERUBAHAN 3: AllergiesSection menerima state
 fun AllergiesSection(
     selectedAllergies: Set<String>,
     onAllergyToggle: (String) -> Unit
@@ -109,7 +105,6 @@ fun AllergiesSection(
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // ... (Teks Judul tidak berubah)
         Text(
             text = "Do you have any food allergies?",
             fontSize = 23.sp,
@@ -134,39 +129,38 @@ fun AllergiesSection(
         ) {
             // Kolom 1
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                // 👈 PERUBAHAN 4: Hubungkan state ke AllergyCheckbox
                 AllergyCheckbox(
                     label = "Dairy",
-                    isChecked = selectedAllergies.contains("Dairy"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Dairy") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Dairy"),
+                    onToggle = { onAllergyToggle("Dairy") }
                 )
                 AllergyCheckbox(
                     label = "Seafood",
-                    isChecked = selectedAllergies.contains("Seafood"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Seafood") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Seafood"),
+                    onToggle = { onAllergyToggle("Seafood") }
                 )
                 AllergyCheckbox(
                     label = "Eggs",
-                    isChecked = selectedAllergies.contains("Eggs"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Eggs") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Eggs"),
+                    onToggle = { onAllergyToggle("Eggs") }
                 )
             }
             // Kolom 2
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 AllergyCheckbox(
                     label = "Nuts",
-                    isChecked = selectedAllergies.contains("Nuts"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Nuts") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Nuts"),
+                    onToggle = { onAllergyToggle("Nuts") }
                 )
                 AllergyCheckbox(
                     label = "Gluten",
-                    isChecked = selectedAllergies.contains("Gluten"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Gluten") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Gluten"),
+                    onToggle = { onAllergyToggle("Gluten") }
                 )
                 AllergyCheckbox(
                     label = "Soy",
-                    isChecked = selectedAllergies.contains("Soy"), // 👈 Gunakan parameter
-                    onToggle = { onAllergyToggle("Soy") } // 👈 Gunakan event
+                    isChecked = selectedAllergies.contains("Soy"),
+                    onToggle = { onAllergyToggle("Soy") }
                 )
             }
         }
@@ -174,24 +168,20 @@ fun AllergiesSection(
 }
 
 @Composable
-// 👈 PERUBAHAN 5: AllergyCheckbox menerima state (menjadi "bodoh")
 fun AllergyCheckbox(
     label: String,
     isChecked: Boolean,
-    onToggle: () -> Unit // 👈 Event diubah menjadi onToggle
+    onToggle: () -> Unit
 ) {
-    // 👈 HAPUS state internal
-    // var isChecked by remember { mutableStateOf(false) }
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(vertical = 4.dp, horizontal = 0.dp)
-            .clickable { onToggle() } // 👈 Buat seluruh baris bisa diklik
+            .clickable { onToggle() }
     ) {
         CustomImageCheckbox(
-            isChecked = isChecked, // 👈 Gunakan parameter
-            onCheckedChange = { _ -> onToggle() }, // 👈 Panggil event onToggle
+            isChecked = isChecked,
+            onCheckedChange = { _ -> onToggle() },
             modifier = Modifier.align(Alignment.CenterVertically)
         )
 
@@ -210,7 +200,6 @@ fun AllergyCheckbox(
 
 
 @Composable
-// (CustomImageCheckbox TIDAK BERUBAH, sudah "bodoh" dan benar)
 fun CustomImageCheckbox(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -221,7 +210,7 @@ fun CustomImageCheckbox(
     Box(
         modifier = modifier
             .size(32.dp)
-            .clickable { onCheckedChange(!isChecked) }, // 👈 Logika ini sudah benar
+            .clickable { onCheckedChange(!isChecked) },
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -232,21 +221,18 @@ fun CustomImageCheckbox(
         )
     }
 }
+
 // =================================================================
 // KOMPONEN: GAYA DIET
 // =================================================================
 
 @Composable
-// 👈 PERUBAHAN 6: DietarySection menerima state
 fun DietarySection(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     selectedDiets: Set<String>,
     onDietToggle: (String) -> Unit
 ) {
-    // 👈 HAPUS state internal
-    // var selectedDiets by remember { mutableStateOf(emptySet<String>()) }
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -258,7 +244,6 @@ fun DietarySection(
                 .clip(RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.TopCenter
         ) {
-            // ... (Gambar Background tidak berubah)
             Image(
                 painter = painterResource(id = R.drawable.dietarybox),
                 contentDescription = "Dietary Section Background",
@@ -273,11 +258,11 @@ fun DietarySection(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                // ... (Teks Judul tidak berubah)
+                // 🔥 PERUBAHAN DI SINI: Judul disesuaikan stylenya (Hijau, 23sp, Bold)
                 Text(
                     text = "Choose your dietary style",
-                    color = Color.White,
-                    fontSize = 20.sp,
+                    color = Color(0xFF5CA135), // Hijau Brand
+                    fontSize = 23.sp,          // Ukuran disamakan dengan header alergi
                     fontFamily = SourceSerifPro,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 20.dp)
@@ -292,12 +277,11 @@ fun DietarySection(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ){
                     dietaryStyles.forEach { style ->
-                        // 👈 PERUBAHAN 7: Hubungkan state dan event ke DietaryButton
-                        val isSelected = selectedDiets.contains(style) // 👈 Gunakan parameter
+                        val isSelected = selectedDiets.contains(style)
                         DietaryButton(
                             label = style,
                             isSelected = isSelected,
-                            onClick = { onDietToggle(style) } // 👈 Panggil event
+                            onClick = { onDietToggle(style) }
                         )
                     }
                 }
@@ -309,7 +293,6 @@ fun DietarySection(
     }
 }
 
-// (DietaryButton TIDAK BERUBAH, sudah "bodoh" dan benar)
 @Composable
 fun DietaryButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
 
@@ -321,11 +304,10 @@ fun DietaryButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
             .fillMaxWidth(0.6f)
             .height(40.dp)
             .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick) // 👈 Ini sudah benar
+            .clickable(onClick = onClick)
             .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
-        // ... (Implementasi Image dan Text tidak berubah)
         Image(
             painter = painterResource(id = imageRes),
             contentDescription = "Dietary style: $label",
@@ -342,7 +324,6 @@ fun DietaryButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-// (NextButton TIDAK BERUBAH, hanya navigasi)
 @Composable
 fun NextButton(navController: NavHostController) {
     Box(
@@ -350,7 +331,7 @@ fun NextButton(navController: NavHostController) {
             .width(120.dp)
             .height(50.dp)
             .clip(RoundedCornerShape(8.dp))
-            .clickable { navController.navigate("types_foods") }, // 👈 Navigasi sudah benar
+            .clickable { navController.navigate("types_foods") },
         contentAlignment = Alignment.Center
     ) {
         Image(

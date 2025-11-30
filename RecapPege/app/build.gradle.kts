@@ -124,6 +124,19 @@ dependencies {
 
     implementation("androidx.biometric:biometric:1.1.0")
 
+    // TAMBAHKAN INI untuk EncryptedSharedPreferences
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // --- CameraX (Untuk Kamera Canggih) ---
+    val cameraxVersion = "1.3.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // --- Permissions (Untuk minta izin kamera di Compose) ---
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
     // --- Testing ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -93,17 +93,35 @@ fun IntakeRecapPageWeekly(
             modifier = Modifier.align(Alignment.TopStart).offset(x = 16.dp, y = 118.dp)
         )
 
-        // More Button
+        // More Button (SUDAH DIPERBAIKI)
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 360.dp, y = 154.dp)
+                // 1. Ubah Anchor ke Kanan Atas (TopEnd)
+                .align(Alignment.TopEnd)
+
+                // 2. Hapus x=360.dp, cukup atur Y nya saja biar tinggi tetap sama
+                .offset(y = 154.dp)
+
+                // 3. Beri jarak aman dari pinggir kanan layar
+                .padding(end = 16.dp)
+
                 .requiredWidth(36.dp)
                 .clickable { navController.navigate(Screen.MonthlyRecap.route) }
         ) {
-            Image(painter = painterResource(id = R.drawable.icroundreadmore), contentDescription = null, colorFilter = ColorFilter.tint(Color(0xff5ca135)), modifier = Modifier.requiredSize(36.dp))
-            Text(text = "More", color = Color(0xff5ca135), textAlign = TextAlign.Center, fontSize = 8.sp, modifier = Modifier.offset(y = (-10).dp))
+            Image(
+                painter = painterResource(id = R.drawable.icroundreadmore),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(Color(0xff5ca135)),
+                modifier = Modifier.requiredSize(36.dp)
+            )
+            Text(
+                text = "More",
+                color = Color(0xff5ca135),
+                textAlign = TextAlign.Center,
+                fontSize = 8.sp,
+                modifier = Modifier.offset(y = (-10).dp)
+            )
         }
 
         // === DROPDOWN FILTER ===
@@ -270,7 +288,8 @@ fun FoodCardItem(entry: IntakeEntry, serifFont: FontFamily, serifBold: FontFamil
         ) {
             if (entry.imageUrl != null) {
                 AsyncImage(
-                    model = entry.imageUrl,
+                    // ✅ Optimize lagi
+                    model = com.example.recappage.util.ImageHelper.optimizeUrl(entry.imageUrl),
                     contentDescription = entry.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

@@ -73,6 +73,9 @@ fun Scaffold(
 // -------------------------------------------------------------
 // MAIN HOMEPAGE
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// MAIN HOMEPAGE (FIXED TOP BORDER)
+// -------------------------------------------------------------
 @Composable
 fun HomePage(navController: NavHostController) {
 
@@ -89,29 +92,26 @@ fun HomePage(navController: NavHostController) {
 
     val isLowBattery = batteryLevel <= 20
 
+    android.util.Log.d("BATTERY_MONITOR", "Level Baterai: $batteryLevel%. Mode Hemat Daya: $isLowBattery. Durasi Animasi: ${if (isLowBattery) 800 else 3000}ms")
+
     val recViewModel: RecommendationViewModel = hiltViewModel()
     val randomFood by recViewModel.randomFood.collectAsState()
 
     // 1. PANGGIL REGISTRATION VIEWMODEL (Untuk ambil data user)
     val regViewModel: RegistrationViewModel = hiltViewModel()
-    // Atau pakai: val regViewModel: RegistrationViewModel = viewModel() jika pakai navigation compose standard
 
     val intakeViewModel: IntakeViewModel = hiltViewModel()
     val favViewModel: FavouriteViewModel = hiltViewModel()
-    // Asumsi: favViewModel.favourites adalah list yang bisa langsung diakses ukurannya
     val savedCount = favViewModel.favourites.size
 
     val consumedCalories by intakeViewModel.totalCaloriesToday.collectAsState()
-    // 2. AMBIL DATA GOAL DARI STATE VIEWMODEL
-    // (State ini otomatis update kalau loadUserProfile sukses)
     val userGoal = regViewModel.dailyCalorieGoal.intValue
 
-    // ✅ AMBIL DATA MACROS (CONSUMED)
+    // ✅ AMBIL DATA MACROS
     val cCarbs by intakeViewModel.totalCarbsToday.collectAsState()
     val cProtein by intakeViewModel.totalProteinToday.collectAsState()
     val cFat by intakeViewModel.totalFatToday.collectAsState()
 
-    // ✅ AMBIL DATA MACROS (TARGET)
     val tCarbs by intakeViewModel.targetCarbs.collectAsState()
     val tProtein by intakeViewModel.targetProtein.collectAsState()
     val tFat by intakeViewModel.targetFat.collectAsState()
@@ -121,24 +121,31 @@ fun HomePage(navController: NavHostController) {
     // 3. LOAD DATA SAAT HOMEPAGE DIBUKA
     LaunchedEffect(Unit) {
         recViewModel.loadFoods()
-        regViewModel.loadUserProfile() // <--- Ambil data dari Firestore
+        regViewModel.loadUserProfile()
     }
 
     var showResult by remember { mutableStateOf(false) }
     var dietary by remember { mutableStateOf("vegan") }
     val scope = rememberCoroutineScope()
 
-
-
     LaunchedEffect(Unit) { recViewModel.loadFoods() }
 
     // ====================================================
-    // SCAFFOLD (BOTTOM BAR ADA DI DALAM)
+    // SCAFFOLD (TOP BAR & BOTTOM BAR FIXED)
     // ====================================================
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+
+        // 🔥 PERUBAHAN 1: TopBorder dipindah ke sini agar diam di atas
+        topBar = {
+            TopBorder(
+                navController = navController,
+                photoUrl = profilePicUrl
+            )
+        },
+
         bottomBar = {
             Component18(
                 modifier = Modifier.fillMaxWidth(),
@@ -147,10 +154,11 @@ fun HomePage(navController: NavHostController) {
         }
     ) { innerPadding ->
 
+        // 🔥 PERUBAHAN 2: Gunakan innerPadding agar konten turun ke bawah TopBar
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
+                .padding(innerPadding) // Ini penting agar tidak tertutup TopBar/BottomBar
                 .background(MaterialTheme.colorScheme.background)
         ) {
 
@@ -158,25 +166,20 @@ fun HomePage(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 5.dp)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()) // Scroll hanya berlaku di sini
             ) {
 
-                // 2. MASUKKAN KE TOPBORDER
-                TopBorder(
-                    navController = navController,
-                    photoUrl = profilePicUrl // ✅ TAMBAHKAN INI
-                )
+                // ❌ TopBorder LAMA DIHAPUS DARI SINI
 
                 Spacer(Modifier.height(16.dp))
                 TodayHeader(navController)
                 Spacer(Modifier.height(16.dp))
-                // 4. KIRIM DATA 'userGoal' KE KARTU
+
                 HomeHorizontalCards(
                     navController = navController,
                     dailyGoal = userGoal,
                     consumed = consumedCalories,
                     savedCount = savedCount,
-                    // ✅ PASSING DATA MACROS
                     consumedCarbs = cCarbs, targetCarbs = tCarbs,
                     consumedProtein = cProtein, targetProtein = tProtein,
                     consumedFat = cFat, targetFat = tFat
@@ -191,14 +194,14 @@ fun HomePage(navController: NavHostController) {
                     setShowResult = { showResult = it },
                     dietary = dietary,
                     setDietary = { dietary = it },
-                    isLowBattery = isLowBattery   // ✅ KIRIM KE BAWAH
+                    isLowBattery = isLowBattery
                 )
             }
         }
     }
 
     // ====================================================
-    // POPUP DI LUAR SCAFFOLD → SELALU DI ATAS BOTTOM BAR
+    // POPUP DI LUAR SCAFFOLD
     // ====================================================
     val food = randomFood
     val context = androidx.compose.ui.platform.LocalContext.current

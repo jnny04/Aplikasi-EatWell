@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import kotlin.math.sqrt
 
 class ShakeDetector(context: Context) : SensorEventListener {
@@ -14,7 +15,6 @@ class ShakeDetector(context: Context) : SensorEventListener {
 
     private var onShakeListener: (() -> Unit)? = null
 
-    // Ambang batas guncangan (semakin kecil angkanya, semakin sensitif)
     private val SHAKE_THRESHOLD_GRAVITY = 2.7F
     private val SHAKE_SLOP_TIME_MS = 500
     private var shakeTimestamp: Long = 0
@@ -22,14 +22,15 @@ class ShakeDetector(context: Context) : SensorEventListener {
     fun start(onShake: () -> Unit) {
         this.onShakeListener = onShake
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        Log.d("SENSOR_LIFECYCLE", "🟢 [Accelerometer] STARTED: User masuk Home Page. Siap deteksi guncangan.")
     }
 
     fun stop() {
         sensorManager.unregisterListener(this)
+        Log.d("SENSOR_LIFECYCLE", "🔴 [Accelerometer] STOPPED: User keluar Home Page. Sensor non-aktif.")
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Tidak perlu diimplementasikan
     }
 
     override fun onSensorChanged(event: SensorEvent?) {

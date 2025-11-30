@@ -42,16 +42,26 @@ fun FilterDialog(
         ).any { it }
     }
 
+    // Properti ini membuat Dialog bisa menggunakan lebar penuh layar
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Box(
             modifier = Modifier
-                .width(380.dp)
-                .height(565.dp)
+                // 🔥 PERUBAHAN DI SINI:
+                // Ganti width(380.dp) menjadi fillMaxWidth(0.92f)
+                // Artinya: Ambil 92% dari lebar layar HP apapun.
+                .fillMaxWidth(0.92f)
+
+                // 🔥 PERUBAHAN DI SINI:
+                // Ganti height(565.dp) menjadi heightIn(...)
+                // wrapContentHeight: Tinggi menyesuaikan isi konten
+                // heightIn(max): Membatasi agar tidak terlalu panjang di tablet/layar besar
+                .wrapContentHeight()
+                .heightIn(max = 600.dp)
+
                 .clip(RoundedCornerShape(12.dp))
-                // ⬇️ pakai surface supaya ikut light/dark
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
@@ -73,7 +83,6 @@ fun FilterDialog(
                         fontFamily = SourceSerifPro,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        // hijau brand tetap, biar konsisten
                         color = Color(0xFF5CA135)
                     )
                     TextButton(onClick = {
@@ -81,7 +90,6 @@ fun FilterDialog(
                     }) {
                         Text(
                             "Reset",
-                            // ⬇️ pakai onSurface dengan alpha, bukan Gray fix
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                             fontSize = 14.sp,
                             textDecoration = TextDecoration.Underline
@@ -91,6 +99,7 @@ fun FilterDialog(
 
                 Spacer(Modifier.height(8.dp))
 
+                // Bagian Dietary & Cuisine
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -138,7 +147,6 @@ fun FilterDialog(
                         onClick = { onApply(local); onDismiss() },
                         enabled = hasSelection,
                         colors = ButtonDefaults.buttonColors(
-                            // aktif: tetap hijau brand; non-aktif: pakai surfaceVariant
                             containerColor = if (hasSelection) Color(0xFF5CA135)
                             else MaterialTheme.colorScheme.surfaceVariant
                         ),
@@ -151,7 +159,6 @@ fun FilterDialog(
                             "Apply",
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
-                            // teks putih kalau aktif, kalau disabled pakai onSurface dg alpha
                             color = if (hasSelection)
                                 MaterialTheme.colorScheme.onPrimary
                             else
@@ -164,6 +171,8 @@ fun FilterDialog(
         }
     }
 }
+
+// --- BAGIAN DI BAWAH INI TIDAK ADA YANG DIUBAH ---
 
 @Composable
 fun DietaryList(
@@ -221,7 +230,6 @@ fun FilterCheckBox(
         Text(
             label,
             fontSize = 16.sp,
-            // ⬇️ pakai onSurface biar kebaca di dark mode
             color = MaterialTheme.colorScheme.onSurface,
             fontFamily = SourceSans3,
             fontWeight = FontWeight.Medium
@@ -241,12 +249,11 @@ fun CustomCheckBox(
             .border(
                 width = if (checked) 2.dp else 1.dp,
                 color = if (checked)
-                    Color(0xFFFC7100) // oranye brand
+                    Color(0xFFFC7100)
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(8.dp)
             )
-            // ⬇️ surface, bukan putih fix
             .background(MaterialTheme.colorScheme.surface)
             .clickable { onCheckedChange() },
         contentAlignment = Alignment.Center
@@ -255,7 +262,7 @@ fun CustomCheckBox(
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Checked",
-                tint = Color(0xFFFC7100),  // oranye brand
+                tint = Color(0xFFFC7100),
                 modifier = Modifier.size(20.dp)
             )
         }

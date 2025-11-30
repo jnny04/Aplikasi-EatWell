@@ -28,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -107,7 +108,6 @@ fun HomeHorizontalCards(
                         .size(size)
                         .clip(CircleShape)
                         .background(
-                            // Indikator Hijau (Aktif) atau Abu-abu (Pasif)
                             if (pagerState.currentPage == index) Color(0xFF5CA135)
                             else Color.LightGray
                         )
@@ -119,7 +119,7 @@ fun HomeHorizontalCards(
 
 /**
  * =========================================================
- * CARD 1 — CALORIES CARD (LAYOUT FIXED)
+ * CARD 1 — CALORIES CARD
  * =========================================================
  */
 @Composable
@@ -140,7 +140,7 @@ fun CaloriesCard(
 
     Box(
         modifier = Modifier
-            .size(width = 320.dp, height = 240.dp) // Ukuran Tetap (Sesuai Request)
+            .size(width = 320.dp, height = 240.dp)
             .graphicsLayer {
                 shadowElevation = 12.dp.toPx()
                 shape = RoundedCornerShape(20.dp)
@@ -174,8 +174,6 @@ fun CaloriesCard(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Lingkaran Progress
-                // 🔥 TIPS: Jika masih sempit, ubah 120.dp jadi 110.dp di sini & di Canvas
                 val circleSize = 115.dp
 
                 Box(
@@ -183,7 +181,6 @@ fun CaloriesCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Canvas(modifier = Modifier.size(circleSize)) {
-                        // Track
                         drawArc(
                             color = trackColor,
                             startAngle = 0f,
@@ -191,7 +188,6 @@ fun CaloriesCard(
                             useCenter = false,
                             style = Stroke(width = strokeThickness)
                         )
-                        // Progress
                         drawArc(
                             color = Color(0xFFFC7100),
                             startAngle = -90f,
@@ -203,7 +199,7 @@ fun CaloriesCard(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = valFormatted(remaining),
-                            fontSize = 22.sp, // 🔥 Turunkan dikit dari 24 ke 22 biar aman
+                            fontSize = 22.sp,
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
                             color = textColor
@@ -220,63 +216,97 @@ fun CaloriesCard(
 
             // --- KANAN: INFO & TOMBOL ---
             Column(
-                modifier = Modifier.padding(top = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.End // 🔥 PERBAIKAN 1: Rata Kanan
-            ) {
-                // Info Base Goal
+                modifier = Modifier
+                    .padding(top = 55.dp, start = 10.dp),   // 🔥 tambah start padding
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalAlignment = Alignment.Start
+            ){
+
+                // 1. Info Base Goal
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         painter = painterResource(id = R.drawable.base_goal),
                         contentDescription = null,
-                        modifier = Modifier.size(28.dp)
+                        // 🔥 Pastikan ukuran icon sama persis dengan bawahnya
+                        modifier = Modifier.size(25.dp)
                     )
-                    Spacer(Modifier.width(10.dp))
-                    Column(horizontalAlignment = Alignment.End) { // Rata kanan juga
-                        Text("Base Goal", fontSize = 10.sp, color = subTextColor, fontFamily = SourceSans3)
-                        Text("${valFormatted(baseGoal)} cal", fontSize = 14.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = textColor)
+                    Spacer(Modifier.width(8.dp))
+
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = "Base Goal",
+                            fontSize = 10.sp,
+                            color = subTextColor,
+                            fontFamily = SourceSans3,
+                            lineHeight = 12.sp
+                        )
+                        Text(
+                            text = "${valFormatted(baseGoal)} cal",
+                            fontSize = 14.sp,
+                            fontFamily = SourceSerifPro,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
                     }
                 }
 
-                // Info Saved Recipes
+                // 2. Info Saved Recipes
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         painter = painterResource(id = R.drawable.saved_recipe),
                         contentDescription = null,
-                        modifier = Modifier.size(28.dp)
+                        // 🔥 Pastikan ukuran icon sama persis (32.dp) agar teksnya sejajar
+                        modifier = Modifier.size(25.dp)
                     )
-                    Spacer(Modifier.width(10.dp))
-                    Column(horizontalAlignment = Alignment.End) { // Rata kanan juga
-                        Text("Saved", fontSize = 10.sp, color = subTextColor, fontFamily = SourceSans3)
-                        Text("$savedRecipe Recipes", fontSize = 14.sp, fontFamily = SourceSerifPro, fontWeight = FontWeight.Bold, color = textColor)
+                    Spacer(Modifier.width(8.dp))
+
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = "Saved",
+                            fontSize = 10.sp,
+                            color = subTextColor,
+                            fontFamily = SourceSans3,
+                            lineHeight = 12.sp
+                        )
+                        Text(
+                            text = "$savedRecipe Recipes",
+                            fontSize = 14.sp,
+                            fontFamily = SourceSerifPro,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // Tombol Log Manually
+                // 3. Tombol Log Manually
                 Box(
                     modifier = Modifier
                         .height(36.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF5CA135))
-                        .padding(horizontal = 12.dp), // 🔥 Kurangi padding horizontal (16->12) biar muat
+                        // 🔥 PERBAIKAN: Padding horizontal dikurangi (16 -> 12) agar muat 1 baris
+                        .padding(horizontal = 12.dp)
+                        .clickable { onClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.plus),
                             contentDescription = null,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(10.dp)
                         )
-                        Spacer(Modifier.width(4.dp)) // Kurangi jarak icon-text dikit
+                        Spacer(Modifier.width(3.dp)) // Jarak icon ke teks sedikit dirapatkan
                         Text(
                             text = "Log manually",
                             color = Color.White,
-                            fontSize = 10.sp, // 🔥 PERBAIKAN 2: Kecilkan font (11->10)
+                            fontSize = 10.sp,
                             fontFamily = SourceSerifPro,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1 // 🔥 PERBAIKAN 3: Paksa 1 baris
+                            // 🔥 PERBAIKAN: Paksa 1 baris
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible
                         )
                     }
                 }
@@ -307,7 +337,6 @@ fun RecommendationCard(navController: NavHostController) {
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // Background image (foodbox)
         Image(
             painter = painterResource(id = R.drawable.foodbox),
             contentDescription = null,
@@ -320,7 +349,6 @@ fun RecommendationCard(navController: NavHostController) {
             contentScale = ContentScale.Crop
         )
 
-        // Overlay content
         Column(
             modifier = Modifier
                 .matchParentSize()
@@ -376,7 +404,7 @@ fun RecommendationCard(navController: NavHostController) {
 
 /**
  * =========================================================
- * CARD 3 — MACROS CARD (ADAPTIF DARK MODE)
+ * CARD 3 — MACROS CARD
  * =========================================================
  */
 @Composable
@@ -390,30 +418,28 @@ fun MacrosCard(
 
     Box(
         modifier = Modifier
-            .size(width = 320.dp, height = 240.dp)   // ✅ tinggi tetap
+            .size(width = 320.dp, height = 240.dp)
             .graphicsLayer {
                 shadowElevation = 12.dp.toPx()
                 shape = RoundedCornerShape(20.dp)
                 clip = true
             }
             .background(cardColor, RoundedCornerShape(20.dp))
-            .padding(horizontal = 20.dp, vertical = 16.dp)  // 🔽 padding vertikal dirapetin sedikit
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween  // ✅ bagi rata tinggi ke 4 item
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1) Judul
             Text(
                 "Macros",
                 fontFamily = SourceSerifPro,
-                fontSize = 22.sp,                           // 🔽 sedikit lebih kecil dari 24.sp
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = textColor
             )
 
-            // 2) Carbs
             MacroRowItem(
                 label = "Carbohydrates",
                 consumed = cCarbs,
@@ -422,7 +448,6 @@ fun MacrosCard(
                 iconRes = R.drawable.carbs
             )
 
-            // 3) Protein
             MacroRowItem(
                 label = "Protein",
                 consumed = cProtein,
@@ -431,7 +456,6 @@ fun MacrosCard(
                 iconRes = R.drawable.protein
             )
 
-            // 4) Fat
             MacroRowItem(
                 label = "Fat",
                 consumed = cFat,
@@ -465,7 +489,7 @@ fun MacroRowItem(
         Image(
             painter = painterResource(id = iconRes),
             contentDescription = label,
-            modifier = Modifier.size(28.dp),                 // 🔽 icon sedikit dikecilkan
+            modifier = Modifier.size(28.dp),
             contentScale = ContentScale.Fit
         )
         Spacer(Modifier.width(10.dp))
@@ -475,7 +499,7 @@ fun MacroRowItem(
                 fontFamily = SourceSans3,
                 fontSize = 10.sp,
                 color = subTextColor,
-                modifier = Modifier.padding(bottom = 2.dp)   // 🔽 jarak label–bar dikecilkan
+                modifier = Modifier.padding(bottom = 2.dp)
             )
             Box(
                 modifier = Modifier

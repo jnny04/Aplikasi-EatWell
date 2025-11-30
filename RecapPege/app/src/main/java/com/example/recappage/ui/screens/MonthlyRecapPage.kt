@@ -213,7 +213,7 @@ fun MonthlyRecapPage(
                             // Gambar Makanan
                             if (item.imageUrl != null) {
                                 AsyncImage(
-                                    model = item.imageUrl,
+                                    model = com.example.recappage.util.ImageHelper.optimizeUrl(item.imageUrl),
                                     contentDescription = item.name,
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop

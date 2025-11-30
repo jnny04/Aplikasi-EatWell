@@ -8,7 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme // ✅ Import MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -46,29 +46,37 @@ fun FoodPreviewPopup(
         cleanHtml(detail?.summary ?: (summary ?: ""))
     }
 
-    val cardHeight = if (fromHomePage) 652.dp else 576.dp
-    val titleTopPadding = if (fromHomePage) 300.dp else 280.dp
+    // Ukuran Gambar Tetap
+    val imageHeight = 230.dp
     val imageOffset = 20.dp
+    // Padding atas konten (agar tidak nabrak gambar)
+    val titleTopPadding = imageHeight + imageOffset + 12.dp
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f)) // Gelapkan background overlay
+            .background(Color.Black.copy(alpha = 0.6f))
             .zIndex(10f)
-            .clickable { onClose() } // Klik luar untuk tutup
+            .clickable { onClose() },
+        contentAlignment = Alignment.Center
     ) {
 
-        Box(modifier = Modifier.align(Alignment.Center).clickable(enabled = false) {}) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
 
             // =============================
-            //   CARD (ADAPTIF DARK MODE)
+            //   CARD UTAMA
             // =============================
             Box(
                 modifier = Modifier
-                    .width(380.dp)
-                    .height(cardHeight)
+                    .fillMaxWidth(0.92f) // Lebar 92% layar
+                    // 🔥 UBAH TINGGI: Max dikecilkan jadi 580.dp (biar pendek)
+                    .heightIn(min = 400.dp, max = 580.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    // ✅ GANTI: Color.White -> MaterialTheme.colorScheme.surface
                     .background(MaterialTheme.colorScheme.surface)
             ) {
 
@@ -81,42 +89,44 @@ fun FoodPreviewPopup(
 
                     Text(
                         text = title,
-                        fontSize = 26.sp,
+                        fontSize = 24.sp,
                         fontFamily = SourceSerifPro,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        lineHeight = 30.sp,
-                        // ✅ GANTI: Default Black -> onSurface
+                        lineHeight = 28.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp)) // Jarak diperkecil
 
                     Text(
                         text = "What’s in it?",
                         fontSize = 14.sp,
                         fontFamily = SourceSerifPro,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF5CA135), // Hijau tetap
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        color = Color(0xFF5CA135),
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
 
                     Text(
                         text = cleanedSummary,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
-                        maxLines = 6,
+                        maxLines = 5, // Kurangi max lines biar hemat tempat
                         lineHeight = 16.sp,
-                        // ✅ GANTI: Default Black -> onSurface
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(26.dp))
+                    // 🔥 UBAH JARAK: Dikurangi dari 26.dp jadi 16.dp biar tombol naik
+                    Spacer(modifier = Modifier.height(16.dp))
 
+                    // ICON RECIPE & ORDER
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 0.dp), // Reset padding bawah
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
 
@@ -127,9 +137,9 @@ fun FoodPreviewPopup(
                             Image(
                                 painter = painterResource(id = R.drawable.recipe),
                                 contentDescription = null,
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(36.dp) // Sedikit dikecilkan
                             )
-                            Text("Recipe", fontSize = 14.sp, color = Color(0xFFFC7100))
+                            Text("Recipe", fontSize = 13.sp, color = Color(0xFFFC7100))
                         }
 
                         Column(
@@ -139,59 +149,56 @@ fun FoodPreviewPopup(
                             Image(
                                 painter = painterResource(id = R.drawable.ojekorange),
                                 contentDescription = null,
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(36.dp)
                             )
-                            Text("Order", fontSize = 14.sp, color = Color(0xFFFC7100))
+                            Text("Order", fontSize = 13.sp, color = Color(0xFFFC7100))
                         }
                     }
 
                     // ==========================
-                    // SPIN AGAIN (HOME ONLY)
+                    // SPIN AGAIN (POSISI DINAIKKAN)
                     // ==========================
                     if (fromHomePage && onSpinAgain != null) {
-
-                        Spacer(modifier = Modifier.height(28.dp))
+                        // 🔥 UBAH JARAK: Jarak antara tombol order dan spin again diperkecil (8.dp)
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSpinAgain() },
+                                .clickable { onSpinAgain() }
+                                .padding(bottom = 16.dp), // Padding bawah secukupnya
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-
-                            // GANTI IKON JIKA PERLU (Opsional, tapi tinting lebih aman)
                             Icon(
                                 painter = painterResource(id = R.drawable.refreshnobg),
                                 contentDescription = null,
-                                // ✅ GANTI: Tinting sesuai tema
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(28.dp) // Icon sedikit dikecilkan
                             )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Spin Again",
-                                fontSize = 14.sp,
-                                // ✅ GANTI: Color.DarkGray -> onSurface
+                                fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
+                    } else {
+                        // Jika tidak ada spin again, kasih jarak bawah dikit
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
 
             // =============================
-            // GAMBAR (Tetap sama)
+            // GAMBAR (DINAMIS)
             // =============================
             AsyncImage(
-                model = image,
+                model = com.example.recappage.util.ImageHelper.optimizeUrl(image),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(width = 340.dp, height = 255.dp)
+                    .fillMaxWidth(0.85f)
+                    .height(imageHeight)
                     .align(Alignment.TopCenter)
                     .offset(y = imageOffset)
                     .clip(RoundedCornerShape(16.dp))
@@ -201,18 +208,24 @@ fun FoodPreviewPopup(
             // =============================
             // CLOSE BUTTON (X)
             // =============================
-            Icon(
-                painter = painterResource(id = R.drawable.cancel),
-                contentDescription = "Close",
-                // ✅ GANTI: Tinting ke onSurface
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            Box(
                 modifier = Modifier
-                    .size(24.dp) // Sedikit diperbesar agar mudah diklik
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-16).dp, y = (16).dp)
+                    .fillMaxWidth(0.92f)
+                    .height(imageHeight)
+                    .align(Alignment.TopCenter)
                     .zIndex(6f)
-                    .clickable { onClose() }
-            )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.cancel),
+                    contentDescription = "Close",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 10.dp, end = 10.dp)
+                        .size(15.dp)
+                        .clickable { onClose() }
+                )
+            }
         }
     }
 }

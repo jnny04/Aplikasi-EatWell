@@ -14,19 +14,19 @@ import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
     primary = OrangePrimary,
-    background = DarkBackground,      // Background jadi Hitam
-    surface = DarkSurface,            // Kartu jadi Abu Gelap
+    background = DarkBackground,
+    surface = DarkSurface,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color.White,
-    onBackground = DarkOnBackground,  // Teks jadi Putih
-    onSurface = DarkOnSurface         // Teks di kartu jadi Putih
+    onBackground = DarkOnBackground,
+    onSurface = DarkOnSurface
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = OrangePrimary,
-    background = LightBackground,      // background bisa tetap warna lain
-    surface = Color.White,             // ⬅️ kartu jadi putih
+    background = LightBackground,
+    surface = Color.White,
     onPrimary = Color.White,
     onSecondary = Color.White,
     onTertiary = Color.White,

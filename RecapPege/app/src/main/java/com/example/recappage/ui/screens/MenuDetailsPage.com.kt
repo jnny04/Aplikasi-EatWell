@@ -101,7 +101,7 @@ fun MenuDetailsPage(
                     .height(350.dp) // Tinggi gambar fixed
                     .align(Alignment.TopCenter),
                 contentScale = ContentScale.Crop,
-                placeholder = painterResource(R.drawable.chicsaladwrap)
+                placeholder = painterResource(R.drawable.spn2)
             )
 
             // Tombol Navigasi Overlay (Back & Fav)

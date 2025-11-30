@@ -22,7 +22,9 @@ object DatabaseModule {
             context,
             RecipeDatabase::class.java,
             "recipes_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration() // ✅ TAMBAHKAN INI AGAR TIDAK CRASH
+            .build()
     }
 
     @Singleton
