@@ -32,15 +32,19 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.descope.Descope
 import com.example.recappage.R
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.navigation.Screen
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.google.firebase.auth.FirebaseAuth
+<<<<<<< Updated upstream
 import com.descope.Descope
 
 // ✅ Tambahkan import coroutine (jika belum otomatis)
+=======
+>>>>>>> Stashed changes
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,6 +56,7 @@ fun SignInScreen(navController: NavHostController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+<<<<<<< Updated upstream
     // Inisialisasi Auth & Context
     val auth = remember { FirebaseAuth.getInstance() }
     val context = LocalContext.current
@@ -59,6 +64,20 @@ fun SignInScreen(navController: NavHostController) {
 
     // ✅ 1. Buat Scope Coroutine (Untuk menjalankan fungsi suspend Descope)
     val coroutineScope = rememberCoroutineScope()
+=======
+    // Setup Auth & Context
+    val auth = remember { FirebaseAuth.getInstance() }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val containerColor = Color(0xFFD3D3D3)
+
+    // --- SETUP BIOMETRIK ---
+    val fragmentActivity = context as? FragmentActivity
+    val isBiometricAvailable = remember { BiometricHelper.isBiometricAvailable(context) }
+    // Tombol biometrik muncul jika HP support biometrik (Login pertama kali pun bisa muncul untuk setup/cek)
+    // Atau bisa diubah logikanya: `&& auth.currentUser != null` jika hanya ingin muncul setelah pernah login
+    val showBiometricButton = isBiometricAvailable
+>>>>>>> Stashed changes
 
     // ---------------------------------------------------------
     // ✅ LOGIKA LOGIN DESCOPE (Fixed with Coroutine)
@@ -80,9 +99,30 @@ fun SignInScreen(navController: NavHostController) {
         }
     }
 
+<<<<<<< Updated upstream
     // ---------------------------------------------------------
     // LOGIKA LOGIN FIREBASE
     // ---------------------------------------------------------
+=======
+    // --- SETUP DESCOPE (GOOGLE) ---
+    val performDescopeLogin: () -> Unit = {
+        val projectId = "P35deW4J1H5rkOUS9ZTwb0hD1pbd" // Pastikan ID ini benar
+        val flowUrl = "https://api.descope.com/login/$projectId?flow=sign-up-or-in"
+
+        coroutineScope.launch {
+            try {
+                Descope.flow.create(
+                    flowUrl = flowUrl,
+                    deepLinkUrl = "android-app://com.example.recappage/descope"
+                ).start(context)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error starting Descope: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // --- SETUP FIREBASE EMAIL/PASS ---
+>>>>>>> Stashed changes
     val performSignIn: () -> Unit = {
         if (!email.endsWith("@gmail.com", ignoreCase = true)) {
             Toast.makeText(context, "Hanya akun Gmail (@gmail.com) yang diizinkan untuk masuk.", Toast.LENGTH_LONG).show()
@@ -97,7 +137,7 @@ fun SignInScreen(navController: NavHostController) {
                             }
                         }
                     } else {
-                        Toast.makeText(context, "Login Gagal. Cek kembali email dan password Anda.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Login Gagal. Cek email dan password.", Toast.LENGTH_LONG).show()
                     }
                 }
         }
@@ -142,40 +182,42 @@ fun SignInScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp)
             ) {
+<<<<<<< Updated upstream
                 // Group: Field + Forgot Password
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Column(
+=======
+                // Input Fields
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Email
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.emailicon), contentDescription = null, tint = Color.Gray)
+                        },
+>>>>>>> Stashed changes
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Email Input
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("Email") },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.emailicon),
-                                    contentDescription = "Email Icon",
-                                    tint = Color.Gray
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedContainerColor = containerColor,
-                                unfocusedContainerColor = containerColor,
-                                cursorColor = Color.Gray,
-                                focusedLabelColor = Color.Gray,
-                                unfocusedLabelColor = Color.Gray,
-                                focusedLeadingIconColor = Color.Gray,
-                                unfocusedLeadingIconColor = Color.Gray
-                            )
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = containerColor,
+                            unfocusedContainerColor = containerColor,
+                            cursorColor = Color.Gray,
+                            focusedLabelColor = Color.Gray,
+                            unfocusedLabelColor = Color.Gray,
+                            focusedLeadingIconColor = Color.Gray,
+                            unfocusedLeadingIconColor = Color.Gray
                         )
+                    )
 
+<<<<<<< Updated upstream
                         // Password Input
                         OutlinedTextField(
                             value = password,
@@ -209,10 +251,46 @@ fun SignInScreen(navController: NavHostController) {
                                 focusedLeadingIconColor = Color.Gray,
                                 unfocusedLeadingIconColor = Color.Gray
                             )
+=======
+                    // Password
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.pswordicon), contentDescription = null, tint = Color.Gray)
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = containerColor,
+                            unfocusedContainerColor = containerColor,
+                            cursorColor = Color.Gray,
+                            focusedLabelColor = Color.Gray,
+                            unfocusedLabelColor = Color.Gray,
+                            focusedLeadingIconColor = Color.Gray,
+                            unfocusedLeadingIconColor = Color.Gray
+>>>>>>> Stashed changes
                         )
-                    }
+                    )
+                }
 
+<<<<<<< Updated upstream
                     // Forgot Password Link
+=======
+                // Forgot Password
+                Box(modifier = Modifier.fillMaxWidth()) {
+>>>>>>> Stashed changes
                     Text(
                         text = "Forgot Password?",
                         color = Color(0xFFFC7100),
@@ -223,20 +301,70 @@ fun SignInScreen(navController: NavHostController) {
                             textDecoration = TextDecoration.Underline
                         ),
                         modifier = Modifier
-                            .align(Alignment.End)
-                            .offset(y = (4).dp, x = (-5).dp)
+                            .align(Alignment.CenterEnd)
+                            .padding(top = 8.dp)
                             .clickable { navController.navigate(Screen.ForgotPass.route) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+<<<<<<< Updated upstream
                 // Tombol Sign In (Firebase)
                 HijauImage(onClick = performSignIn)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Pembatas "OR"
+=======
+                // ✅ ROW TOMBOL UTAMA (SIGN IN + FINGERPRINT)
+>>>>>>> Stashed changes
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+<<<<<<< Updated upstream
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+                    Text(
+                        text = "  OR  ",
+                        color = Color.Gray,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+=======
+                    // 1. Tombol Sign In (Hijau Image)
+                    HijauImage(onClick = performSignIn)
+
+                    // 2. Tombol Biometrik (Hanya muncul jika HP support)
+                    if (showBiometricButton) {
+                        Spacer(modifier = Modifier.width(16.dp)) // Jarak antar tombol
+
+                        // 🔥 ICON BIOMETRIK BESAR TANPA KOTAK
+                        Icon(
+                            painter = painterResource(id = R.drawable.fingerprint),
+                            contentDescription = "Biometric Login",
+                            tint = Color(0xFF5CA135), // Hijau Brand
+                            modifier = Modifier
+                                .size(48.dp) // Ukuran besar agar seimbang dengan tombol Sign In
+                                .clickable { performBiometricLogin() }
+                        )
+                    }
+>>>>>>> Stashed changes
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+<<<<<<< Updated upstream
+                // Tombol Continue with Google (Descope)
+                SocialLoginButton(
+                    text = "Continue with Google",
+                    iconResId = R.drawable.googleicon,
+                    onClick = {
+                        performDescopeLogin()
+                    }
+=======
+                // PEMBATAS "OR"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -253,13 +381,12 @@ fun SignInScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Tombol Continue with Google (Descope)
+                // TOMBOL GOOGLE (DESCOPE)
                 SocialLoginButton(
                     text = "Continue with Google",
                     iconResId = R.drawable.googleicon,
-                    onClick = {
-                        performDescopeLogin()
-                    }
+                    onClick = performDescopeLogin
+>>>>>>> Stashed changes
                 )
             }
 
@@ -275,6 +402,13 @@ fun SignInScreen(navController: NavHostController) {
     }
 }
 
+<<<<<<< Updated upstream
+=======
+// ---------------------------------------------------------
+// KOMPONEN HELPER
+// ---------------------------------------------------------
+
+>>>>>>> Stashed changes
 @Composable
 fun WelcomeText() {
     Text(
@@ -297,7 +431,7 @@ fun HijauImage(onClick: () -> Unit) {
     ) {
         Image(
             painter = painterResource(id = R.drawable.hijau),
-            contentDescription = "Hijau Image",
+            contentDescription = "Sign In Button",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )
@@ -329,7 +463,11 @@ fun SocialLoginButton(
         ) {
             Image(
                 painter = painterResource(id = iconResId),
+<<<<<<< Updated upstream
                 contentDescription = "Social Logo",
+=======
+                contentDescription = null,
+>>>>>>> Stashed changes
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
