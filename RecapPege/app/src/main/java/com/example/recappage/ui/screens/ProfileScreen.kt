@@ -1,6 +1,8 @@
 package com.example.recappage.ui.screens
 
+import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -42,6 +44,13 @@ import com.example.recappage.ui.components.Component18
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.viewmodel.StreakViewModel
 import com.example.recappage.ui.theme.SourceSans3
+import androidx.compose.material3.MaterialTheme
+import androidx.core.content.FileProvider // ✅ Import ini penting
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Objects
 
 @Composable
 fun ProfileScreen(
@@ -52,30 +61,43 @@ fun ProfileScreen(
 ) {
     val serifBold = FontFamily(Font(R.font.source_serif_pro_bold))
     val context = LocalContext.current
+
+    // State untuk menu pop-up
+    var showMenu by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         streakViewModel.refreshStreak()
     }
 
-    // Load data
     val streakDays by streakViewModel.streakDays.collectAsState()
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
     val isLoading = regViewModel.isLoading.value
 
-    // Image Picker Logic
+    // Image Picker Logic (Galeri)
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imageUri = uri
     }
-    val loadedUrl = regViewModel.profileImageUrl.value
 
+    // 🔥 LOGIKA KAMERA BARU 🔥
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess ->
+        if (isSuccess && tempCameraUri != null) {
+            // Jika foto berhasil diambil, set ke imageUri agar tampil di layar
+            imageUri = tempCameraUri
+        }
+    }
+
+    val loadedUrl = regViewModel.profileImageUrl.value
     val scroll = rememberScrollState()
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // ✅ Dinamis
+            .background(MaterialTheme.colorScheme.background)
     ) {
 
         // Header Image
@@ -92,7 +114,7 @@ fun ProfileScreen(
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF5CA135))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
 
@@ -104,11 +126,11 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Top Bar
+                // Top Bar Text
                 Box(Modifier.fillMaxWidth()) {
                     Text(
                         text = "Edit Profile",
-                        color = Color(0xFF5CA135),
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 20.sp,
                         fontFamily = serifBold,
                         modifier = Modifier.align(Alignment.Center)
@@ -132,10 +154,9 @@ fun ProfileScreen(
                         .height(285.dp)
                         .shadow(6.dp, RoundedCornerShape(12.dp))
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surface) // ✅ Dinamis
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
 
-                    // Background Blur Logic
                     val backgroundModel = imageUri ?: loadedUrl
                     if (backgroundModel != null) {
                         AsyncImage(
@@ -157,36 +178,126 @@ fun ProfileScreen(
                         )
                     }
 
-                    // Avatar
+                    // === AVATAR SECTION ===
                     Box(modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp)) {
+
                         Box(
-                            modifier = Modifier.size(110.dp).clip(CircleShape).border(2.dp, Color(0xFFE0E0E0), CircleShape),
+                            modifier = Modifier
+                                .size(110.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
-                                modifier = Modifier.size(106.dp).clip(CircleShape).border(3.dp, Color.White, CircleShape),
+                                modifier = Modifier
+                                    .size(106.dp)
+                                    .clip(CircleShape)
+                                    .border(3.dp, MaterialTheme.colorScheme.onPrimary, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (imageUri != null) {
-                                    AsyncImage(model = imageUri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(100.dp).clip(CircleShape))
-                                } else if (loadedUrl != null) {
-                                    AsyncImage(model = loadedUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(100.dp).clip(CircleShape))
+                                val finalImageSource = imageUri ?: loadedUrl
+
+                                if (finalImageSource != null) {
+                                    AsyncImage(
+                                        model = finalImageSource,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(100.dp).clip(CircleShape)
+                                    )
                                 } else {
-                                    Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null, tint = Color(0xFF9E9E9E), modifier = Modifier.size(100.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.AccountCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(100.dp)
+                                    )
                                 }
                             }
                         }
-                        Image(
-                            painter = painterResource(id = R.drawable.camera_profile),
-                            contentDescription = "Change Picture",
-                            modifier = Modifier.align(Alignment.BottomEnd).size(36.dp).offset(x = (-4).dp, y = (-4).dp).clickable { pickImage.launch("image/*") }
-                        )
+
+                        // 🔥 ICON KAMERA & MENU POP-UP
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(36.dp)
+                                .offset(x = (-4).dp, y = (-4).dp)
+                                .clickable { showMenu = true }
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.camera_profile),
+                                contentDescription = "Change Picture",
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                            ) {
+                                // OPSI 1: Choose from Gallery
+                                DropdownMenuItem(
+                                    text = { Text("Choose from Gallery", color = MaterialTheme.colorScheme.onSurface) },
+                                    onClick = {
+                                        showMenu = false
+                                        pickImage.launch("image/*")
+                                    }
+                                )
+
+                                // 🔥 OPSI 2: TAKE PHOTO (Sekarang Berfungsi!)
+                                DropdownMenuItem(
+                                    text = { Text("Take Photo", color = MaterialTheme.colorScheme.onSurface) },
+                                    onClick = {
+                                        showMenu = false
+                                        // 1. Buat file temporary
+                                        val file = context.createImageFile()
+                                        // 2. Dapatkan URI aman menggunakan FileProvider
+                                        val uri = FileProvider.getUriForFile(
+                                            Objects.requireNonNull(context),
+                                            context.packageName + ".provider", // Sesuaikan dengan authorities di Manifest
+                                            file
+                                        )
+                                        // 3. Simpan URI ke state dan luncurkan kamera
+                                        tempCameraUri = uri
+                                        takePhotoLauncher.launch(uri)
+                                    }
+                                )
+
+                                // Garis Pemisah
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                                // OPSI 3: REMOVE PHOTO (Selalu Muncul)
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Remove Photo",
+                                            color = MaterialTheme.colorScheme.error,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    // Disable tombol jika tidak ada foto
+                                    enabled = (loadedUrl != null || imageUri != null),
+                                    onClick = {
+                                        showMenu = false
+                                        regViewModel.deleteProfilePicture(
+                                            onSuccess = {
+                                                imageUri = null
+                                                Toast.makeText(context, "Foto profil dihapus.", Toast.LENGTH_SHORT).show()
+                                            },
+                                            onFailure = { errorMsg ->
+                                                Toast.makeText(context, "Gagal: $errorMsg", Toast.LENGTH_LONG).show()
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        }
                     }
 
                     // Username
                     Text(
                         text = regViewModel.username.value,
-                        color = MaterialTheme.colorScheme.onSurface,                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 20.sp,
                         fontFamily = serifBold,
                         modifier = Modifier.align(Alignment.BottomStart).padding(start = 32.dp, bottom = 50.dp)
                     )
@@ -211,111 +322,91 @@ fun ProfileScreen(
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(horizontal = 12.dp, vertical = 10.dp)
                 ) {
-                    // 1. Email (Input Biasa)
                     EditableField("Email", regViewModel.email.value) { regViewModel.email.value = it }
-
-                    // 2. Gender (Dropdown: Male/Female)
                     GenderDropdownField("Gender", regViewModel.gender.value ?: "") { regViewModel.gender.value = it }
-
-                    // 3. Age (Suffix: years, Number Only)
                     SuffixEditableField("Age", regViewModel.age.value, "years") { regViewModel.age.value = it }
-
-                    // 4. Height (Suffix: cm, Number Only)
                     SuffixEditableField("Height", regViewModel.height.value, "cm") { regViewModel.height.value = it }
-
-                    // 5. Weight (Suffix: kg, Number Only)
                     SuffixEditableField("Weight", regViewModel.weight.value, "kg") { regViewModel.weight.value = it }
                 }
 
                 Spacer(Modifier.height(30.dp))
 
-                // ===========================
-                //   SAVE BUTTON
-                // ===========================
+                // SAVE BUTTON
                 Button(
                     onClick = {
                         regViewModel.updateUserProfile(
                             context = context,
                             imageUri = imageUri,
                             onSuccess = {
-                                println("Profile updated successfully!")
-                                imageUri = null
+                                // JANGAN reset imageUri ke null disini agar foto baru tetap tampil
+                                Toast.makeText(context, "Profil berhasil disimpan!", Toast.LENGTH_SHORT).show()
                             },
                             onFailure = { errorMsg ->
-                                println("Error: $errorMsg")
+                                Toast.makeText(context, "Gagal simpan: $errorMsg", Toast.LENGTH_LONG).show()
                             }
                         )
                     },
                     modifier = Modifier
-                        .wrapContentWidth() // 👈 Agar lebar tombol menyesuaikan teks
+                        .wrapContentWidth()
                         .height(48.dp),
-                    shape = RoundedCornerShape(24.dp), // Lebih bulat
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5CA135)),
-                    contentPadding = PaddingValues(horizontal = 32.dp) // Padding dalam tombol
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    contentPadding = PaddingValues(horizontal = 32.dp)
                 ) {
                     Text(
                         "Save Changes",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
-                Spacer(Modifier.height(10.dp)) // Jarak antara Save dan Delete
+
+                Spacer(Modifier.height(20.dp))
+
                 Text(
                     text = "Delete Account",
-                    color = Color.Red,
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    style = TextStyle(textDecoration = TextDecoration.Underline), // 👈 Garis Bawah
+                    style = TextStyle(textDecoration = TextDecoration.Underline),
                     modifier = Modifier
                         .clickable {
-                            // Tampilkan dialog konfirmasi
                             regViewModel.showDeleteDialog.value = true
                         }
-                        .padding(8.dp) // Area klik sedikit diperluas agar mudah ditekan
+                        .padding(8.dp)
                 )
-                Spacer(Modifier.height(40.dp)) // Jarak ekstra di bawah
+                Spacer(Modifier.height(40.dp))
             }
         }
-        // POPUP KONFIRMASI HAPUS AKUN
+
+        // Popup Konfirmasi Delete Account
         if (regViewModel.showDeleteDialog.value) {
             AlertDialog(
                 onDismissRequest = { regViewModel.showDeleteDialog.value = false },
                 title = {
-                    Text(text = "Delete Account?", fontWeight = FontWeight.Bold)
+                    Text(text = "Delete Account?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 },
                 text = {
-                    Text("Are you sure you want to delete your account permanently? This action cannot be undone and all your data will be lost.")
+                    Text("Are you sure you want to delete your account permanently? This action cannot be undone and all your data will be lost.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            regViewModel.showDeleteDialog.value = false // Tutup dialog
-
-                            // Panggil fungsi hapus dari ViewModel
+                            regViewModel.showDeleteDialog.value = false
                             regViewModel.deleteAccount(
-                                onSuccess = {
-                                    // Jika berhasil, kembalikan ke layar Login
-                                    navController.navigate("sign_in") {
-                                        popUpTo(0) // Hapus semua history navigasi agar tidak bisa back
-                                    }
-                                },
-                                onFailure = { errorMsg ->
-                                    // Tampilkan pesan error (misal pakai Toast atau Println)
-                                    println("Error: $errorMsg")
-                                    android.widget.Toast.makeText(context, errorMsg, android.widget.Toast.LENGTH_LONG).show()
-                                }
+                                onSuccess = { navController.navigate("sign_in") { popUpTo(0) } },
+                                onFailure = { errorMsg -> Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show() }
                             )
                         }
                     ) {
-                        Text("Delete", color = Color.Red, fontWeight = FontWeight.Bold)
+                        Text("Delete", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = { regViewModel.showDeleteDialog.value = false }
                     ) {
-                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface,)
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.surface
@@ -330,8 +421,9 @@ fun ProfileScreen(
 }
 
 // -----------------------------------------------------------------
-// 1. KOMPONEN BIASA (Untuk Email) - Font Source Sans 3
+// KOMPONEN HELPER
 // -----------------------------------------------------------------
+
 @Composable
 private fun EditableField(
     label: String,
@@ -339,12 +431,12 @@ private fun EditableField(
     onChange: (String) -> Unit
 ) {
     val fontLabel = FontFamily(Font(R.font.source_serif_pro_regular))
-    // Tidak perlu 'val fontInput' manual lagi
 
     Column {
         Text(
             text = label,
-            color = MaterialTheme.colorScheme.primary,            fontFamily = fontLabel,
+            color = MaterialTheme.colorScheme.primary,
+            fontFamily = fontLabel,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold
         )
@@ -353,7 +445,7 @@ private fun EditableField(
             value = text,
             onValueChange = onChange,
             textStyle = TextStyle(
-                fontFamily = SourceSans3, // ✅ Pakai langsung
+                fontFamily = SourceSans3,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurface
             ),
@@ -362,13 +454,10 @@ private fun EditableField(
                 .fillMaxWidth()
         )
 
-        Divider(color = Color(0xFFE0E0E0))
+        Divider(color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
-// -----------------------------------------------------------------
-// 2. KOMPONEN SUFFIX (Untuk Age, Height, Weight) - "cm", "kg", "years"
-// -----------------------------------------------------------------
 @Composable
 private fun SuffixEditableField(
     label: String,
@@ -387,7 +476,6 @@ private fun SuffixEditableField(
             fontWeight = FontWeight.Bold
         )
 
-        // Wadah Row agar Text Field dan Suffix bersebelahan
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -395,8 +483,6 @@ private fun SuffixEditableField(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            // 1. Input Field: Hapus fillMaxWidth, ganti jadi wrapContentWidth
-            // Agar lebarnya hanya SELEBAR ANGKA yang diketik
             BasicTextField(
                 value = text,
                 onValueChange = onChange,
@@ -406,13 +492,11 @@ private fun SuffixEditableField(
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 ),
-                // ✅ PENTING: IntrinsicSize.Min atau wrapContent agar tidak serakah tempat
                 modifier = Modifier.width(IntrinsicSize.Min)
             )
 
-            // 2. Suffix: Langsung di sebelahnya (1 spasi)
             Text(
-                text = " $suffix", // Spasi manual di sini
+                text = " $suffix",
                 style = TextStyle(
                     fontFamily = SourceSans3,
                     fontSize = 16.sp,
@@ -421,13 +505,10 @@ private fun SuffixEditableField(
             )
         }
 
-        Divider(color = Color(0xFFE0E0E0))
+        Divider(color = MaterialTheme.colorScheme.surfaceVariant)
     }
 }
 
-// -----------------------------------------------------------------
-// 3. KOMPONEN GENDER (Dropdown: Male / Female)
-// -----------------------------------------------------------------
 @Composable
 private fun GenderDropdownField(
     label: String,
@@ -460,7 +541,7 @@ private fun GenderDropdownField(
                 Text(
                     text = if (selectedGender.isNotEmpty()) selectedGender else "Select Gender",
                     style = TextStyle(
-                        fontFamily = SourceSans3, // ✅ Pakai langsung
+                        fontFamily = SourceSans3,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -475,16 +556,17 @@ private fun GenderDropdownField(
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface)            ) {
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+            ) {
                 DropdownMenuItem(
-                    text = { Text("Male", fontFamily = SourceSans3) }, // ✅ Pakai langsung
+                    text = { Text("Male", fontFamily = SourceSans3, color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         onGenderChange("MALE")
                         expanded = false
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Female", fontFamily = SourceSans3) }, // ✅ Pakai langsung
+                    text = { Text("Female", fontFamily = SourceSans3, color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         onGenderChange("FEMALE")
                         expanded = false
@@ -493,6 +575,17 @@ private fun GenderDropdownField(
             }
         }
 
-        Divider(color = Color(0xFFE0E0E0))
+        Divider(color = MaterialTheme.colorScheme.surfaceVariant)
     }
+}
+
+// 🔥 Helper untuk membuat File Gambar Sementara
+fun Context.createImageFile(): File {
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val imageFileName = "JPEG_" + timeStamp + "_"
+    return File.createTempFile(
+        imageFileName,
+        ".jpg",
+        externalCacheDir
+    )
 }

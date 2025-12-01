@@ -50,18 +50,15 @@ fun MenuDetailsPage(
     val macroData = viewModel.macroData.collectAsState().value
     val isFav = favViewModel.favourites.any { it.id == foodId }
 
-    // Load Profile
     LaunchedEffect(Unit) {
         regViewModel.loadUserProfile()
     }
     val profilePicUrl = regViewModel.profileImageUrl.value
 
-    // Load Recipe
     LaunchedEffect(foodId) {
         viewModel.loadRecipeDetail(foodId)
     }
 
-    // State Bottom Sheet
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded,
@@ -89,83 +86,41 @@ fun MenuDetailsPage(
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
 
-        // Gunakan Box untuk menumpuk gambar dan BottomSheetScaffold
+        // Gunakan Box untuk menumpuk elemen
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
 
-            // 1. GAMBAR BACKGROUND (Di belakang Sheet)
+            // 1. GAMBAR BACKGROUND (Layer Paling Bawah)
             AsyncImage(
                 model = recipe?.image,
                 contentDescription = recipe?.title ?: "",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(350.dp) // Tinggi gambar fixed
+                    .height(350.dp)
                     .align(Alignment.TopCenter),
                 contentScale = ContentScale.Crop,
                 placeholder = painterResource(R.drawable.spn2)
             )
 
-            // Tombol Navigasi Overlay (Back & Fav)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp) // Samakan tinggi dengan gambar
-            ) {
-                // Back Button
-                Image(
-                    painter = painterResource(id = R.drawable.back),
-                    contentDescription = "Back",
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF5CA135)),
-                    modifier = Modifier
-                        .padding(start = 20.dp, top = 20.dp)
-                        .size(28.dp)
-                        .align(Alignment.TopStart)
-                        .clickable { navController.popBackStack() }
-                )
-
-                // Favorite Button
-                Image(
-                    painter = painterResource(
-                        id = if (isFav) R.drawable.new_love else R.drawable.heartmenudetails
-                    ),
-                    contentDescription = "Favorite",
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 20.dp, top = 20.dp)
-                        .size(28.dp)
-                        .clickable {
-                            if (recipe != null) {
-                                val recipeModel = mapRecipeInfoToRecipe(recipe)
-                                favViewModel.toggleFavorite(recipeModel)
-                            }
-                        }
-                )
-            }
-
-            // 2. BOTTOM SHEET SCAFFOLD
-            // Gunakan backgroundColor Transparent agar gambar di belakang terlihat
+            // 2. BOTTOM SHEET SCAFFOLD (Layer Tengah)
+            // Area transparan di atas sheet ini yang sebelumnya menghalangi klik
             BottomSheetScaffold(
                 scaffoldState = scaffoldState,
-                // ✅ Ubah sheetContainerColor menjadi warna Surface (Putih/Abu Gelap)
-                // Ini membuat handle drag menyatu dengan warna kartu
                 sheetContainerColor = MaterialTheme.colorScheme.surface,
                 sheetContentColor = MaterialTheme.colorScheme.onSurface,
-                sheetShadowElevation = 8.dp, // Bayangan agar sheet terlihat menimpa gambar
-                sheetPeekHeight = 350.dp, // ✅ Atur tinggi intipan agar pas di bawah gambar (sesuaikan jika perlu)
+                sheetShadowElevation = 8.dp,
+                sheetPeekHeight = 350.dp,
                 sheetShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                // Background scaffold dibuat transparan agar gambar di `Box` induk terlihat
-                containerColor = Color.Transparent,
+                containerColor = Color.Transparent, // Transparan agar gambar terlihat
                 sheetContent = {
-                    // === ISI SHEET ===
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(0.9f) // Sheet bisa ditarik sampai 90% layar
+                            .fillMaxHeight(0.9f)
                             .padding(horizontal = 24.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // JUDUL MAKANAN
                         Text(
                             text = recipe?.title ?: "Loading...",
                             fontSize = 24.sp,
@@ -178,7 +133,6 @@ fun MenuDetailsPage(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // TOTAL CALORIES ROW
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 text = "Total Calories",
@@ -209,7 +163,6 @@ fun MenuDetailsPage(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // MACROS LIST
                         macroData?.let {
                             MacroRowDetail("Carbs", it.carbs, Color(0xFF40C4FF))
                             MacroRowDetail("Protein", it.protein, Color(0xFFFFEE58))
@@ -218,7 +171,6 @@ fun MenuDetailsPage(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // INGREDIENTS
                         Text(
                             text = "Ingredients",
                             fontSize = 18.sp,
@@ -240,7 +192,6 @@ fun MenuDetailsPage(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // STEP BY STEP
                         Text(
                             text = "Step by step",
                             fontSize = 18.sp,
@@ -276,7 +227,6 @@ fun MenuDetailsPage(
 
                         Spacer(modifier = Modifier.height(30.dp))
 
-                        // ADD BUTTON
                         Box(
                             modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.Center
@@ -304,8 +254,47 @@ fun MenuDetailsPage(
                     }
                 }
             ) {
-                // Kosongkan content scaffold, karena kita pakai Box di luar untuk gambar
-                Box(modifier = Modifier.fillMaxSize())
+                // Konten Body Scaffold: Kosongkan saja karena gambar ada di layer bawah
+                Box(Modifier.fillMaxSize())
+            }
+
+            // 🔥 3. TOMBOL NAVIGASI OVERLAY (Layer Paling Atas)
+            // Dengan memindahkannya ke sini (setelah BottomSheetScaffold),
+            // tombol ini akan digambar di atas sheet transparan, sehingga bisa diklik.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(350.dp) // Sesuaikan tinggi area tombol
+            ) {
+                // Back Button
+                Image(
+                    painter = painterResource(id = R.drawable.back),
+                    contentDescription = "Back",
+                    colorFilter = ColorFilter.tint(Color(0xFF5CA135)),
+                    modifier = Modifier
+                        .padding(start = 20.dp, top = 20.dp)
+                        .size(40.dp)
+                        .align(Alignment.TopStart)
+                        .clickable { navController.popBackStack() }
+                )
+
+                // Favorite Button
+                Image(
+                    painter = painterResource(
+                        id = if (isFav) R.drawable.new_love else R.drawable.heartmenudetails
+                    ),
+                    contentDescription = "Favorite",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 20.dp, top = 20.dp)
+                        .size(28.dp)
+                        .clickable {
+                            if (recipe != null) {
+                                val recipeModel = mapRecipeInfoToRecipe(recipe)
+                                favViewModel.toggleFavorite(recipeModel)
+                            }
+                        }
+                )
             }
         }
     }
@@ -327,7 +316,7 @@ fun mapRecipeInfoToRecipe(info: RecipeInformation): Recipe {
         dairyFree = info.dairyFree,
         diets = info.diets.map { it.toString() },
         dishTypes = info.dishTypes,
-        extendedIngredients = emptyList(), // Tidak perlu simpan detail ingredient di fav list
+        extendedIngredients = emptyList(),
         gaps = info.gaps,
         glutenFree = info.glutenFree,
         healthScore = info.healthScore,

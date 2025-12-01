@@ -373,4 +373,65 @@ class RegistrationViewModel : ViewModel() {
                 onFailure("Gagal hapus data: ${e.message}")
             }
     }
+// File: RegistrationViewModel.kt
+
+    fun deleteProfilePicture(onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        val uid = auth.currentUser?.uid
+        // Pastikan user sudah login
+        if (uid == null) {
+            onFailure("User belum login.")
+            return
+        }
+
+        // 1. Dapatkan referensi ke file gambar di Firebase Storage
+        val storageRef = storage.reference.child("profile_images/$uid")
+
+        // Cek apakah ada URL yang tersimpan di state saat ini
+        if (profileImageUrl.value == null) {
+            // Jika URL sudah kosong, kita hanya perlu memastikan data di Firestore juga kosong.
+            db.collection("users").document(uid)
+                .update("profileImageUrl", null)
+                .addOnSuccessListener {
+                    profileImageUrl.value = null // Update state lokal
+                    onSuccess()
+                }
+                .addOnFailureListener { e ->
+                    onFailure(e.localizedMessage ?: "Gagal membersihkan URL di Firestore.")
+                }
+            return
+        }
+
+        // 2. HAPUS file dari Firebase Storage
+        storageRef.delete()
+            .addOnSuccessListener {
+                // 3. Setelah sukses dihapus dari Storage, HAPUS URL dari Firestore
+                db.collection("users").document(uid)
+                    .update("profileImageUrl", null) // Set nilainya menjadi 'null'
+                    .addOnSuccessListener {
+                        profileImageUrl.value = null // Update state lokal agar UI langsung refresh
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        // Gagal membersihkan URL di Firestore, tapi file di Storage sudah terhapus
+                        onFailure(e.localizedMessage ?: "Gagal membersihkan URL di Firestore.")
+                    }
+            }
+            .addOnFailureListener { e ->
+                // Gagal menghapus file (misalnya file tidak ada atau izin ditolak)
+                // Kita coba bersihkan di Firestore saja, untuk jaga-jaga
+                if (e.message?.contains("does not exist") == true) {
+                    db.collection("users").document(uid)
+                        .update("profileImageUrl", null)
+                        .addOnSuccessListener {
+                            profileImageUrl.value = null
+                            onSuccess()
+                        }
+                        .addOnFailureListener { e2 ->
+                            onFailure(e2.localizedMessage ?: "Gagal menghapus file dan membersihkan URL.")
+                        }
+                } else {
+                    onFailure(e.localizedMessage ?: "Gagal menghapus file dari Storage.")
+                }
+            }
+    }
 }

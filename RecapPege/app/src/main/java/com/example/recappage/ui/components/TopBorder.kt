@@ -57,7 +57,7 @@ fun ProfileButton(
 ) {
     // 1. Modifier Dasar (Ukuran dan Shape)
     val baseModifier = modifier
-        .padding(7.dp)
+        .padding(12.dp)
         .size(60.dp)
         .clip(CircleShape)
         .clickable {
