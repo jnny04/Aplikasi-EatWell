@@ -43,6 +43,7 @@ import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.util.BiometricHelper
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +58,9 @@ fun SignInScreen(navController: NavHostController) {
     val auth = remember { FirebaseAuth.getInstance() }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val containerColor = Color(0xFFD3D3D3)
+
+    // 🔥 GANTI: containerColor statis → MaterialTheme.colorScheme.surfaceVariant
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
 
     // --- SETUP BIOMETRIK ---
     val fragmentActivity = context as? FragmentActivity
@@ -129,7 +132,8 @@ fun SignInScreen(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color.White),
+                // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -169,20 +173,25 @@ fun SignInScreen(navController: NavHostController) {
                         onValueChange = { email = it },
                         label = { Text("Email") },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.emailicon), contentDescription = null, tint = Color.Gray)
+                            // 🔥 GANTI: tint = Color.Gray → onSurface.copy
+                            Icon(painter = painterResource(id = R.drawable.emailicon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         },
+                        // 🔥 GANTI: Warna teks input
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
                             unfocusedBorderColor = Color.Transparent,
+                            // 🔥 GANTI: containerColor
                             focusedContainerColor = containerColor,
                             unfocusedContainerColor = containerColor,
-                            cursorColor = Color.Gray,
-                            focusedLabelColor = Color.Gray,
-                            unfocusedLabelColor = Color.Gray,
-                            focusedLeadingIconColor = Color.Gray,
-                            unfocusedLeadingIconColor = Color.Gray
+                            // 🔥 GANTI: cursor & label colors
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
 
@@ -192,14 +201,18 @@ fun SignInScreen(navController: NavHostController) {
                         onValueChange = { password = it },
                         label = { Text("Password") },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.pswordicon), contentDescription = null, tint = Color.Gray)
+                            // 🔥 GANTI: tint = Color.Gray → onSurface.copy
+                            Icon(painter = painterResource(id = R.drawable.pswordicon), contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         },
+                        // 🔥 GANTI: Warna teks input
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         trailingIcon = {
                             val image = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                                // 🔥 GANTI: tint = Color.Gray → onSurface.copy
+                                Icon(imageVector = image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -207,13 +220,15 @@ fun SignInScreen(navController: NavHostController) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
                             unfocusedBorderColor = Color.Transparent,
+                            // 🔥 GANTI: containerColor
                             focusedContainerColor = containerColor,
                             unfocusedContainerColor = containerColor,
-                            cursorColor = Color.Gray,
-                            focusedLabelColor = Color.Gray,
-                            unfocusedLabelColor = Color.Gray,
-                            focusedLeadingIconColor = Color.Gray,
-                            unfocusedLeadingIconColor = Color.Gray
+                            // 🔥 GANTI: cursor & label colors
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
                 }
@@ -222,7 +237,8 @@ fun SignInScreen(navController: NavHostController) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "Forgot Password?",
-                        color = Color(0xFFFC7100),
+                        // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 10.sp,
                         style = TextStyle(
                             fontFamily = SourceSans3,
@@ -254,7 +270,8 @@ fun SignInScreen(navController: NavHostController) {
                         Icon(
                             painter = painterResource(id = R.drawable.fingerprint),
                             contentDescription = "Biometric Login",
-                            tint = Color(0xFF5CA135),
+                            // 🔥 GANTI: tint = Color(0xFF5CA135) → primary
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .size(48.dp)
                                 .clickable { performBiometricLogin() }
@@ -269,14 +286,17 @@ fun SignInScreen(navController: NavHostController) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+                    // 🔥 GANTI: color = Color.Gray → onSurface.copy
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), thickness = 0.5.dp)
                     Text(
                         text = "  OR  ",
-                        color = Color.Gray,
+                        // 🔥 GANTI: color = Color.Gray → onSurface.copy
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color.Gray, thickness = 0.5.dp)
+                    // 🔥 GANTI: color = Color.Gray → onSurface.copy
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), thickness = 0.5.dp)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -309,7 +329,8 @@ fun SignInScreen(navController: NavHostController) {
 fun WelcomeText() {
     Text(
         text = "Welcome Back!",
-        color = Color(0xFFFC7100),
+        // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+        color = MaterialTheme.colorScheme.primary,
         fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
         style = TextStyle(fontFamily = SourceSerifPro)
@@ -340,16 +361,20 @@ fun SocialLoginButton(
     iconResId: Int,
     onClick: () -> Unit
 ) {
+    // Warna Biru Google (Kita biarkan statis karena itu brand external)
+    val googleBlue = Color(0xFF4285F4)
+
     OutlinedButton(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFF4285F4)),
+        border = BorderStroke(1.dp, googleBlue), // Border tetap biru
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White,
-            contentColor = Color(0xFF4285F4)
+            // 🔥 GANTI: containerColor = Color.White → surface
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = googleBlue
         )
     ) {
         Row(
@@ -367,7 +392,7 @@ fun SocialLoginButton(
                 text = text,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = Color(0xFF4285F4)
+                color = googleBlue
             )
         }
     }
@@ -376,13 +401,17 @@ fun SocialLoginButton(
 @Composable
 fun BottomRegisterText(modifier: Modifier = Modifier, navController: NavHostController) {
     val annotatedText = buildAnnotatedString {
-        withStyle(style = SpanStyle(color = Color.Black, fontSize = 16.sp)) {
+        withStyle(
+            // 🔥 GANTI: color = Color.Black → onSurface
+            style = SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+        ) {
             append("Don’t have an account? ")
         }
         pushStringAnnotation(tag = "REGISTER", annotation = "register_screen")
 
         withStyle(style = SpanStyle(
-            color = Color(0xFFFC7100),
+            // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             textDecoration = TextDecoration.Underline

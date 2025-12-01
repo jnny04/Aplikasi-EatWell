@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold // 👈 TAMBAHKAN IMPORT
 import com.example.recappage.R
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.components.TopBorder // 👈 TAMBAHKAN IMPORT
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 
 data class FoodCategory(
@@ -71,7 +72,8 @@ fun TypesFoodsScreen(navController: NavHostController, viewModel: RegistrationVi
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding) // 👈 Terapkan innerPadding
-                .background(Color.White) // 👈 Tambahkan background di sini
+                // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
@@ -85,7 +87,8 @@ fun TypesFoodsScreen(navController: NavHostController, viewModel: RegistrationVi
                 Text(
                     text = "What types of foods do you like?",
                     fontSize = 22.sp,
-                    color = Color(0xFFFC7100),
+                    // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontFamily = SourceSerifPro,
                     modifier = Modifier
@@ -96,7 +99,8 @@ fun TypesFoodsScreen(navController: NavHostController, viewModel: RegistrationVi
                 Text(
                     text = "You can select more than one",
                     fontSize = 16.sp,
-                    color = Color(0xFF555555),
+                    // 🔥 GANTI: color = Color(0xFF555555) → onSurface.copy
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     fontFamily = SourceSerifPro,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
@@ -171,9 +175,11 @@ fun FoodCategoryButton(
     onClick: () -> Unit // 👈 Terima event
 ) {
     // 👈 PERUBAHAN 5: Ubah tampilan berdasarkan state isSelected (Tidak berubah dari sebelumnya)
-    val borderColor = if (isSelected) Color(0xFFFC7100) else Color.LightGray // Oranye saat dipilih
+    // 🔥 GANTI: Border Color
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val backgroundColor = if (isSelected) Color(0xFFFFF7F0) else Color.White // Tint oranye muda
+    // 🔥 GANTI: Background Color
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
 
     Box(
         modifier = Modifier
@@ -193,6 +199,7 @@ fun FoodCategoryButton(
             Image(
                 painter = painterResource(id = category.iconRes),
                 contentDescription = category.description,
+                // 🔥 NOTE: Gambar ikon tetap ditampilkan, tidak perlu colorFilter
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(0.dp),

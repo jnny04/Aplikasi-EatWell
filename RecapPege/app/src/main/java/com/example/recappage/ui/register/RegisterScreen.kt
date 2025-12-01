@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
+import androidx.compose.material3.* // MENGANDUNG ExperimentalMaterial3Api, OutlinedTextField, dll.
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,28 +27,28 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.compose.ui.layout.ContentScale // Tambahkan import ini jika belum ada
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import com.example.recappage.ui.theme.SourceSerifPro
-import android.widget.Toast // 👈 TAMBAHAN
+import android.widget.Toast
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.platform.LocalContext // 👈 TAMBAHAN
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import com.example.recappage.R
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.components.TopBorder
+import androidx.compose.material3.MaterialTheme // WAJIB IMPORT INI
 
 
 @Composable
-fun RegisterScreen(navController: NavHostController, viewModel: RegistrationViewModel) { // 👈 Ini sudah benar
+fun RegisterScreen(navController: NavHostController, viewModel: RegistrationViewModel) {
     val context = LocalContext.current
     Scaffold(
-        modifier = Modifier.fillMaxSize(), // 👈 .background(Color.White) DIHAPUS DARI SINI
+        modifier = Modifier.fillMaxSize(),
 
-        // 🔽 PINDAHKAN TopBorder KE SLOT 'topBar' 🔽
         topBar = {
             TopBorder(navController = navController, showProfile = false)
         }
@@ -56,14 +56,13 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // 👈 Padding ini sekarang sudah benar
-                .background(Color.White), // 👈 .background(Color.White) PINDAH KE SINI
+                .padding(innerPadding)
+                // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // ❌ TopBorder(...) DIHAPUS DARI SINI
 
             Column(
-                // ... sisa konten
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -72,11 +71,12 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                // ... (Teks Judul tidak berubah)
+
                 Text(
                     text = "Your journey starts here!\nTake the first step",
                     fontSize = 24.sp,
-                    color = Color(0xFFFC7100),
+                    // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     style = TextStyle(
@@ -87,7 +87,6 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // 👈 PERUBAHAN 1: Panggil RegisterForm dengan state dari ViewModel
                 RegisterForm(
                     email = viewModel.email.value,
                     onEmailChange = { viewModel.email.value = it },
@@ -101,14 +100,13 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Tombol Sign Up (Tidak berubah, ini hanya navigasi)
+                // Tombol Sign Up
                 Box(
                     modifier = Modifier
                         .width(120.dp)
                         .height(50.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable {
-                            // 1. Ambil nilai terbaru dari ViewModel
                             val email = viewModel.email.value
                             val password = viewModel.password.value
                             val confirmPassword = viewModel.confirmPassword.value
@@ -116,7 +114,7 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
                             // 2. Validasi Email
                             if (!email.endsWith("@gmail.com", ignoreCase = true)) {
                                 Toast.makeText(context, "Email harus menggunakan @gmail.com", Toast.LENGTH_LONG).show()
-                                return@clickable // Hentikan proses
+                                return@clickable
                             }
 
                             // 3. Validasi Password
@@ -144,7 +142,6 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
                             }
 
                             // 5. JIKA LOLOS SEMUA VALIDASI:
-                            // Baru izinkan navigasi
                             navController.navigate("personal_info")
                         },
                     contentAlignment = Alignment.Center
@@ -158,12 +155,12 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
                 }
             }
 
-            // ... (BottomSignInText tidak berubah)
             BottomSignInText(navController = navController)
             Spacer(modifier = Modifier.height(30.dp))
         }
     }
 }
+
 
 // =================================================================
 // KOMPONEN PENDUKUNG
@@ -172,7 +169,6 @@ fun RegisterScreen(navController: NavHostController, viewModel: RegistrationView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// 👈 PERUBAHAN 2: RegisterForm sekarang menerima parameter (menjadi "bodoh")
 fun RegisterForm(
     email: String,
     onEmailChange: (String) -> Unit,
@@ -183,24 +179,17 @@ fun RegisterForm(
     confirmPassword: String,
     onConfirmPasswordChange: (String) -> Unit
 ) {
-    // 👈 PERUBAHAN 3: HAPUS state yang sudah diangkat ke ViewModel
-    // var email by remember { mutableStateOf("") }
-    // var username by remember { mutableStateOf("") }
-    // var password by remember { mutableStateOf("") }
-    // var confirmPassword by remember { mutableStateOf("") }
-
-    // State untuk UI (visibility password) tetap di sini, karena tidak perlu disimpan
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    val containerColor = Color(0xFFE0E0E0)
+    // 🔥 GANTI: containerColor statis → MaterialTheme.colorScheme.surfaceVariant
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // 👈 PERUBAHAN 4: Hubungkan InputField ke parameter
         // 1. Email
         RegisterInputField(
-            value = email, // 👈 Gunakan parameter
-            onValueChange = onEmailChange, // 👈 Gunakan parameter
+            value = email,
+            onValueChange = onEmailChange,
             label = "Email",
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon") },
             keyboardType = KeyboardType.Email,
@@ -209,8 +198,8 @@ fun RegisterForm(
 
         // 2. Username
         RegisterInputField(
-            value = username, // 👈 Gunakan parameter
-            onValueChange = onUsernameChange, // 👈 Gunakan parameter
+            value = username,
+            onValueChange = onUsernameChange,
             label = "Username",
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username Icon") },
             keyboardType = KeyboardType.Text,
@@ -219,8 +208,8 @@ fun RegisterForm(
 
         // 3. Password
         RegisterPasswordInputField(
-            value = password, // 👈 Gunakan parameter
-            onValueChange = onPasswordChange, // 👈 Gunakan parameter
+            value = password,
+            onValueChange = onPasswordChange,
             label = "Password",
             passwordVisible = passwordVisible,
             onVisibilityToggle = { passwordVisible = !passwordVisible },
@@ -229,8 +218,8 @@ fun RegisterForm(
 
         // 4. Confirm Password
         RegisterPasswordInputField(
-            value = confirmPassword, // 👈 Gunakan parameter
-            onValueChange = onConfirmPasswordChange, // 👈 Gunakan parameter
+            value = confirmPassword,
+            onValueChange = onConfirmPasswordChange,
             label = "Confirm password",
             passwordVisible = confirmPasswordVisible,
             onVisibilityToggle = { confirmPasswordVisible = !confirmPasswordVisible },
@@ -239,7 +228,7 @@ fun RegisterForm(
     }
 }
 
-// Composable untuk Input Field umum (TIDAK BERUBAH)
+// Composable untuk Input Field umum (FIXED OutlinedTextField)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterInputField(
@@ -253,7 +242,8 @@ fun RegisterInputField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = Color.Gray, fontSize = 14.sp) },
+        // 🔥 GANTI: label color dan text color
+        label = { Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 14.sp) },
         leadingIcon = leadingIcon,
         modifier = Modifier
             .fillMaxWidth()
@@ -265,15 +255,19 @@ fun RegisterInputField(
             unfocusedBorderColor = Color.Transparent,
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
-            focusedLeadingIconColor = Color.Gray,
-            unfocusedLeadingIconColor = Color.Gray,
-            cursorColor = Color.Gray
+            // 🔥 GANTI: icon color
+            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            // 🔥 GANTI: cursor color
+            cursorColor = MaterialTheme.colorScheme.primary
         ),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        // 🔥 GANTI: textStyle agar teks yang diketik dinamis
+        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
     )
 }
 
-// Composable untuk Password Field (TIDAK BERUBAH)
+// Composable untuk Password Field (FIXED OutlinedTextField)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterPasswordInputField(
@@ -287,12 +281,14 @@ fun RegisterPasswordInputField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = Color.Gray, fontSize = 14.sp) },
+        // 🔥 GANTI: label color dan text color
+        label = { Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 14.sp) },
         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Lock Icon") },
         trailingIcon = {
             val imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
             IconButton(onClick = onVisibilityToggle) {
-                Icon(imageVector = imageVector, contentDescription = "Toggle password visibility", tint = Color.Gray)
+                // 🔥 GANTI: icon color
+                Icon(imageVector = imageVector, contentDescription = "Toggle password visibility", tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
             }
         },
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -307,24 +303,32 @@ fun RegisterPasswordInputField(
             unfocusedBorderColor = Color.Transparent,
             focusedContainerColor = containerColor,
             unfocusedContainerColor = containerColor,
-            focusedLeadingIconColor = Color.Gray,
-            unfocusedLeadingIconColor = Color.Gray,
-            cursorColor = Color.Gray
-        )
+            // 🔥 GANTI: icon color
+            focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            // 🔥 GANTI: cursor color
+            cursorColor = MaterialTheme.colorScheme.primary
+        ),
+        // 🔥 GANTI: textStyle agar teks yang diketik dinamis
+        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface)
     )
 }
 
-// (TIDAK BERUBAH)
+// (BottomSignInText)
 @Composable
 fun BottomSignInText(navController: NavHostController) {
     val annotatedText = buildAnnotatedString {
-        withStyle(style = SpanStyle(color = Color.Black, fontSize = 16.sp)) {
+        withStyle(
+            // 🔥 GANTI: color = Color.Black → onSurface
+            style = SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+        ) {
             append("Already Have an Account? ")
         }
         pushStringAnnotation(tag = "SIGNIN", annotation = "sign_in")
         // 🔽 PERUBAHAN DI SINI 🔽
         withStyle(style = SpanStyle(
-            color = Color(0xFFFC7100),
+            // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             textDecoration = TextDecoration.Underline // 👈 TAMBAHKAN BARIS INI

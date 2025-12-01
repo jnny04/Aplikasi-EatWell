@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign // Tambahkan import TextAlign
 import com.example.recappage.R
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.components.TopBorder
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 // Enum untuk mengelola status gender
 enum class Gender { MALE, FEMALE }
@@ -36,7 +37,7 @@ enum class Gender { MALE, FEMALE }
 @Composable
 fun PersonalInfoScreen(navController: NavHostController, viewModel: RegistrationViewModel) { // 👈 Tambah viewModel
     Scaffold(
-        modifier = Modifier.fillMaxSize(), // 👈 .background(Color.White) DIHAPUS DARI SINI
+        modifier = Modifier.fillMaxSize(),
 
         // 🔽 PINDAHKAN TopBorder KE SLOT 'topBar' 🔽
         topBar = {
@@ -47,7 +48,8 @@ fun PersonalInfoScreen(navController: NavHostController, viewModel: Registration
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding) // 👈 Padding ini sekarang sudah benar
-                .background(Color.White), // 👈 .background(Color.White) PINDAH KE SINI
+                // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(
@@ -62,7 +64,8 @@ fun PersonalInfoScreen(navController: NavHostController, viewModel: Registration
                 Text(
                     text = "Personal Information",
                     fontSize = 24.sp,
-                    color = Color(0xFFFC7100),
+                    // 🔥 GANTI: color = Color(0xFFFC7100) → primary
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontFamily = SourceSerifPro,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -70,7 +73,8 @@ fun PersonalInfoScreen(navController: NavHostController, viewModel: Registration
                 Text(
                     text = "Tell us more about you",
                     fontSize = 16.sp,
-                    color = Color(0xFF555555),
+                    // 🔥 GANTI: color = Color(0xFF555555) → onSurface.copy
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                     fontFamily = SourceSerifPro,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -163,7 +167,8 @@ fun PersonalInfoScreen(navController: NavHostController, viewModel: Registration
                     Text(
                         text = "Time to add your preferences! Press start to continue",
                         fontSize = 10.sp,
-                        color = Color.Black,
+                        // 🔥 GANTI: color = Color.Black → onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = SourceSans3,
                         fontWeight = FontWeight.Light
                         // 👈 modifier padding bottom dihapus
@@ -194,7 +199,8 @@ fun GenderSelector(
         text = "Gender",
         fontSize = 16.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color.Black,
+        // 🔥 GANTI: color = Color.Black → onSurface
+        color = MaterialTheme.colorScheme.onSurface,
         fontFamily = SourceSans3
     )
     Spacer(modifier = Modifier.height(10.dp))
@@ -236,7 +242,8 @@ fun GenderButton(
 ) {
     // ... (kode implementasi tidak berubah)
     val imageRes = if (isSelected) iconOn else iconOff
-    val boxColor = if (isSelected) Color(0xFFE8F5E9) else Color(0xFFE0E0E0)
+    // 🔥 GANTI: boxColor yang tidak dipilih menggunakan surfaceVariant
+    val boxColor = if (isSelected) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surfaceVariant
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -257,7 +264,8 @@ fun GenderButton(
         Text(
             text = label,
             fontSize = 14.sp,
-            color = Color.DarkGray,
+            // 🔥 GANTI: color = Color.DarkGray → onSurface (alpha 0.7)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             fontWeight = FontWeight.SemiBold,
             fontFamily = SourceSans3,
             modifier = Modifier.offset(y = (-20).dp)
@@ -280,7 +288,8 @@ fun SimpleInputRow(
         text = label,
         fontSize = 16.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color.Black,
+        // 🔥 GANTI: color = Color.Black → onSurface
+        color = MaterialTheme.colorScheme.onSurface,
         fontFamily = SourceSans3
     )
     Row(
@@ -312,13 +321,16 @@ fun SimpleInputRow(
                     fontSize = 16.sp,
                     fontFamily = SourceSans3,
                     fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    // 🔥 GANTI: Warna teks input → onSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             Divider(
-                color = Color.Black,
+                // 🔥 GANTI: color = Color.Black → onSurface
+                color = MaterialTheme.colorScheme.onSurface,
                 thickness = 1.dp,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -327,7 +339,8 @@ fun SimpleInputRow(
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = unit,
-            color = Color.Black,
+            // 🔥 GANTI: color = Color.Black → onSurface
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 12.sp,
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.Normal
@@ -346,7 +359,8 @@ fun BirthdayInputRow(
         text = "Birthday",
         fontSize = 16.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color.Black,
+        // 🔥 GANTI: color = Color.Black → onSurface
+        color = MaterialTheme.colorScheme.onSurface,
         fontFamily = SourceSans3
     )
     Spacer(modifier = Modifier.height(8.dp))
@@ -369,7 +383,8 @@ fun BirthdayInputRow(
             Text(
                 text = "year",
                 fontSize = 12.sp,
-                color = Color.Black,
+                // 🔥 GANTI: color = Color.Black → onSurface
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = SourceSerifPro,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(start = 4.dp)
@@ -390,7 +405,8 @@ fun BirthdayInputRow(
             Text(
                 text = "month",
                 fontSize = 12.sp,
-                color = Color.Black,
+                // 🔥 GANTI: color = Color.Black → onSurface
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = SourceSerifPro,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(start = 4.dp)
@@ -411,7 +427,8 @@ fun BirthdayInputRow(
             Text(
                 text = "date",
                 fontSize = 12.sp,
-                color = Color.Black,
+                // 🔥 GANTI: color = Color.Black → onSurface
+                color = MaterialTheme.colorScheme.onSurface,
                 fontFamily = SourceSerifPro,
                 fontWeight = FontWeight.Normal,
                 modifier = Modifier.padding(start = 4.dp)
@@ -435,9 +452,11 @@ fun BirthdayInputField(
         modifier = modifier
             .fillMaxWidth()
             .height(40.dp)
-            .background(Color.White)
+            // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFFFF9800), RoundedCornerShape(8.dp)),
+            // 🔥 GANTI: border(..., Color(0xFFFF9800), ...) → primary
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center
     ) {
         BasicTextField(
@@ -463,7 +482,9 @@ fun BirthdayInputField(
                 fontSize = 16.sp,
                 fontFamily = SourceSans3,
                 fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                // 🔥 GANTI: Warna teks input → onSurface
+                color = MaterialTheme.colorScheme.onSurface
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )

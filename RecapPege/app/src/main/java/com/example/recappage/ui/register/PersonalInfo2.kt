@@ -22,7 +22,7 @@ import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.components.TopBorder
-
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 @Composable
 fun PersonalInfo2Screen(navController: NavHostController, viewModel: RegistrationViewModel) {
@@ -36,7 +36,8 @@ fun PersonalInfo2Screen(navController: NavHostController, viewModel: Registratio
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color.White),
+                // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -108,7 +109,8 @@ fun AllergiesSection(
         Text(
             text = "Do you have any food allergies?",
             fontSize = 23.sp,
-            color = Color(0xFFFC7100),
+            // 🔥 GANTI: color = Color(0xFFFC7100) → MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontFamily = SourceSerifPro,
             modifier = Modifier.padding(bottom = 6.dp)
@@ -116,6 +118,7 @@ fun AllergiesSection(
         Text(
             text = "You can select more than one",
             fontSize = 16.sp,
+            // ✅ Warna ini (0xFF555555) biarkan statis
             color = Color(0xFF555555),
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.SemiBold,
@@ -190,7 +193,8 @@ fun AllergyCheckbox(
         Text(
             text = label,
             fontSize = 16.sp,
-            color = Color.Black,
+            // 🔥 GANTI: color = Color.Black → MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
             fontFamily = SourceSans3,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.CenterVertically)
@@ -261,8 +265,9 @@ fun DietarySection(
                 // 🔥 PERUBAHAN DI SINI: Judul disesuaikan stylenya (Hijau, 23sp, Bold)
                 Text(
                     text = "Choose your dietary style",
-                    color = Color(0xFF5CA135), // Hijau Brand
-                    fontSize = 23.sp,          // Ukuran disamakan dengan header alergi
+                    // 🔥 GANTI: color = Color(0xFF5CA135) → MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 23.sp,
                     fontFamily = SourceSerifPro,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 20.dp)
@@ -297,7 +302,9 @@ fun DietarySection(
 fun DietaryButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
 
     val imageRes = if (isSelected) R.drawable.dietarybuttonon else R.drawable.dietarybutton
-    val textColor = if (isSelected) Color.White else Color.DarkGray
+
+    // 🔥 GANTI: textColor yang tidak dipilih menggunakan onSurface (DarkGray)
+    val textColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
 
     Box(
         modifier = Modifier

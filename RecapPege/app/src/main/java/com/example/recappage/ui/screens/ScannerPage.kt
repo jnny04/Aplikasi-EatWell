@@ -55,6 +55,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 enum class ScannerUiState {
     Idle, Camera, Loading, Result
@@ -117,7 +118,8 @@ fun ScannerPage(
                 Component18(navController = navController)
             }
         },
-        containerColor = Color.White
+        // 🔥 GANTI: containerColor = Color.White → MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
 
@@ -144,11 +146,13 @@ fun ScannerPage(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        // 🔥 LOADING: background warna gelap transparan
                         .background(Color.Black.copy(alpha = 0.3f))
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFFFC7100))
+                    // 🔥 LOADING: color = Color(0xFFFC7100) → primary
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -177,11 +181,17 @@ fun ScannerIdleContent(
     onGalleryClick: () -> Unit,
     onCameraClick: () -> Unit
 ) {
+    // 🔥 Peta warna hijau brand
+    val brandGreen = MaterialTheme.colorScheme.primary // Menggunakan primary yang Anda set ke Orange/Hijau
+    val brandGreenAlpha = brandGreen.copy(alpha = 0.4f)
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
     Column(
         modifier = Modifier
             .padding(paddingValues)
             .fillMaxSize()
-            .background(Color.White),
+            // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -190,7 +200,8 @@ fun ScannerIdleContent(
             fontFamily = SourceSerifPro,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
-            color = Color(0xFF5CA135),
+            // 🔥 GANTI: color = Color(0xFF5CA135) → brandGreen
+            color = brandGreen,
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -203,7 +214,8 @@ fun ScannerIdleContent(
                 .padding(horizontal = 16.dp)
                 .border(
                     width = 2.dp,
-                    color = Color(0xFF5CA135).copy(alpha = 0.4f),
+                    // 🔥 GANTI: color = Color(0xFF5CA135).copy(alpha = 0.4f) → brandGreenAlpha
+                    color = brandGreenAlpha,
                     shape = RoundedCornerShape(16.dp)
                 )
                 .clip(RoundedCornerShape(16.dp))
@@ -215,11 +227,10 @@ fun ScannerIdleContent(
                     imageVector = Icons.Default.Image,
                     contentDescription = null,
                     modifier = Modifier.size(120.dp),
-                    tint = Color(0xFF5CA135).copy(alpha = 0.4f)
+                    // 🔥 GANTI: tint = Color(0xFF5CA135).copy(alpha = 0.4f) → brandGreenAlpha
+                    tint = brandGreenAlpha
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // 🔥 PERUBAHAN DI SINI: DIPISAH JADI 2 TEXT
 
                 // 1. Judul Besar
                 Text(
@@ -227,8 +238,9 @@ fun ScannerIdleContent(
                     textAlign = TextAlign.Center,
                     fontFamily = SourceSans3,
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 20.sp, // Ukuran Besar
-                    color = Color(0xFF5CA135),
+                    fontSize = 20.sp,
+                    // 🔥 GANTI: color = Color(0xFF5CA135) → brandGreen
+                    color = brandGreen,
                     letterSpacing = 2.sp
                 )
 
@@ -238,10 +250,11 @@ fun ScannerIdleContent(
                     textAlign = TextAlign.Center,
                     fontFamily = SourceSans3,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp, // 🔥 UKURAN LEBIH KECIL
-                    color = Color(0xFF5CA135),
+                    fontSize = 14.sp,
+                    // 🔥 GANTI: color = Color(0xFF5CA135) → brandGreen
+                    color = brandGreen,
                     letterSpacing = 1.sp,
-                    modifier = Modifier.padding(top = 4.dp) // Jarak sedikit dari judul
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
@@ -265,29 +278,27 @@ fun ScannerIdleContent(
                 Icon(
                     painter = painterResource(id = R.drawable.backbutton),
                     contentDescription = null,
-                    tint = Color(0xFF5CA135),
+                    // 🔥 GANTI: tint = Color(0xFF5CA135) → brandGreen
+                    tint = brandGreen,
                     modifier = Modifier
                         .size(40.dp)
                         .clickable { navController.popBackStack() }
                 )
-                Text("Back", color = Color(0xFF5CA135), fontSize = 11.sp, fontFamily = SourceSans3)
+                // 🔥 GANTI: color = Color(0xFF5CA135) → brandGreen
+                Text("Back", color = brandGreen, fontSize = 11.sp, fontFamily = SourceSans3)
             }
 
-            // ============================================
-            // 🔥 2. TOMBOL KAMERA (SOLUSI FINAL UKURAN)
-            // ============================================
+            // 2. TOMBOL KAMERA (SOLUSI FINAL UKURAN)
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .wrapContentSize() // Biarkan box menyesuaikan ukuran konten
+                    .wrapContentSize()
                     .clickable { onCameraClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.camera),
                     contentDescription = "camera",
-                    // 🔥 FORCING SIZE: Kita paksa Gambarnya langsung jadi 130dp
-                    // ContentScale.FillBounds akan menarik gambar sampai ke pinggir
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier.requiredSize(90.dp)
                 )
@@ -300,7 +311,8 @@ fun ScannerIdleContent(
                     modifier = Modifier
                         .height(40.dp)
                         .widthIn(min = 90.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5CA135)),
+                    // 🔥 GANTI: containerColor = Color(0xFF5CA135) → brandGreen
+                    colors = ButtonDefaults.buttonColors(containerColor = brandGreen),
                     shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
@@ -359,7 +371,8 @@ fun CameraView(onImageCaptured: (Bitmap) -> Unit, onClose: () -> Unit) {
         Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 50.dp).size(80.dp).clip(CircleShape).background(Color.White).clickable {
             scope.launch { captureImage(context, imageCapture, onImageCaptured) }
         }.padding(5.dp)) {
-            Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0xFFFC7100)))
+            // 🔥 GANTI: background(Color(0xFFFC7100)) → primary
+            Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(MaterialTheme.colorScheme.primary))
         }
     }
 }
@@ -387,11 +400,37 @@ private fun captureImage(context: Context, imageCapture: ImageCapture?, onImageC
 
 @Composable
 fun InfoNote() {
+    // 🔥 Peta warna abu-abu sekunder
+    val secondaryGray = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(20.dp).border(1.4.dp, Color(0xFF8C8C8C), CircleShape), contentAlignment = Alignment.Center) {
-            Text("!", color = Color(0xFF8C8C8C), fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.offset(y = (-1).dp))
+        Box(
+            modifier = Modifier.size(20.dp).border(
+                1.4.dp,
+                // 🔥 GANTI: Color(0xFF8C8C8C) → secondaryGray
+                secondaryGray,
+                CircleShape
+            ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "!",
+                // 🔥 GANTI: Color(0xFF8C8C8C) → secondaryGray
+                color = secondaryGray,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.offset(y = (-1).dp)
+            )
         }
         Spacer(modifier = Modifier.width(6.dp))
-        Text("Note: Calorie values shown are estimates, meant to help you track your intake easily.", fontSize = 10.sp, fontFamily = SourceSans3, color = Color.Gray, lineHeight = 12.sp, modifier = Modifier.padding(top = 1.dp))
+        Text(
+            "Note: Calorie values shown are estimates, meant to help you track your intake easily.",
+            fontSize = 10.sp,
+            fontFamily = SourceSans3,
+            // 🔥 GANTI: color = Color.Gray → secondaryGray
+            color = secondaryGray,
+            lineHeight = 12.sp,
+            modifier = Modifier.padding(top = 1.dp)
+        )
     }
 }

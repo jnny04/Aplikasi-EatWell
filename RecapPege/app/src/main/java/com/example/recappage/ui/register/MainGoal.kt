@@ -1,7 +1,8 @@
 package com.example.recappage.ui.register
 
-import android.widget.Toast // 👈 Tambahkan import
+import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,13 +20,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.theme.SourceSans3
-import androidx.compose.material3.CircularProgressIndicator // 👈 Tambahkan import
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.ui.platform.LocalContext // 👈 Tambahkan import
+import androidx.compose.ui.platform.LocalContext
 import com.example.recappage.R
 import com.example.recappage.ui.components.TopBorder
 import com.example.recappage.ui.viewmodel.RegistrationViewModel
-import com.example.recappage.ui.navigation.Screen // 👈 Tambahkan import
+import com.example.recappage.ui.navigation.Screen
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
+
 @Composable
 fun MainGoalScreen(navController: NavHostController, viewModel: RegistrationViewModel) {
 
@@ -47,6 +50,8 @@ fun MainGoalScreen(navController: NavHostController, viewModel: RegistrationView
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // 🔥 GANTI: Background halaman menggunakan tema
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -54,7 +59,8 @@ fun MainGoalScreen(navController: NavHostController, viewModel: RegistrationView
             Text(
                 text = "What is your main goal?",
                 fontSize = 24.sp,
-                color = Color(0xFF5CA135),
+                // 🔥 GANTI: Warna Teks Judul Utama (sesuaikan dengan warna tema)
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontFamily = SourceSerifPro,
                 modifier = Modifier
@@ -124,7 +130,9 @@ fun MainGoalScreen(navController: NavHostController, viewModel: RegistrationView
 @Composable
 fun GoalButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
     val imageRes = if (isSelected) R.drawable.maingoalbuttonon else R.drawable.maingoalbutton
-    val textColor = if (isSelected) Color.White else Color.Black
+
+    // 🔥 GANTI: Warna Teks tombol Goal menggunakan tema
+    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
 
     Box(
         modifier = Modifier
@@ -143,7 +151,7 @@ fun GoalButton(label: String, isSelected: Boolean, onClick: () -> Unit) {
         Text(
             text = label,
             fontSize = 16.sp,
-            color = textColor,
+            color = textColor, // 🔥 Terapkan warna dinamis
             fontFamily = SourceSans3,
             fontWeight = FontWeight.Medium
         )

@@ -24,6 +24,7 @@ import com.example.recappage.ui.viewmodel.RegistrationViewModel
 import com.example.recappage.ui.theme.SourceSerifPro
 import com.example.recappage.ui.theme.SourceSans3
 import com.example.recappage.ui.components.TopBorder
+import androidx.compose.material3.MaterialTheme // 👈 WAJIB IMPORT INI
 
 @Composable
 fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewModel) {
@@ -40,7 +41,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            // 🔥 GANTI: background(Color.White) → background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -63,7 +65,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
         Text(
             text = "You're all set up!",
             fontSize = 36.sp,
-            color = Color(0xFF5CA135),
+            // 🔥 GANTI: color = Color(0xFF5CA135) → primary
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             fontFamily = SourceSerifPro,
             textAlign = TextAlign.Center
@@ -75,7 +78,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
         Text(
             text = "Great job! Your account is ready, your goals are set, and now\nit's time to begin tracking your intake for a healthier you.",
             fontSize = 12.sp,
-            color = Color(0xFF555555),
+            // 🔥 GANTI: color = Color(0xFF555555) → onSurface.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             fontFamily = SourceSans3,
             textAlign = TextAlign.Center,
             lineHeight = 14.sp  // ✅ jarak baris lebih rapat
@@ -104,7 +108,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
                 Text(
                     text = "Your daily net calorie goal is:",
                     fontSize = 16.sp,
-                    color = Color(0xFF555555),
+                    // 🔥 GANTI: color = Color(0xFF555555) → onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     fontFamily = SourceSans3
                 )
 
@@ -118,7 +123,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
                     Text(
                         text = dailyCalorieGoal,
                         fontSize = 28.sp,
-                        color = Color.Black,
+                        // 🔥 GANTI: color = Color.Black → onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontFamily = SourceSerifPro
                     )
@@ -126,7 +132,8 @@ fun SetupScreen(navController: NavHostController, viewModel: RegistrationViewMod
                     Text(
                         text = "Calories",
                         fontSize = 16.sp,
-                        color = Color.Black,
+                        // 🔥 GANTI: color = Color.Black → onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontFamily = SourceSans3
                     )
                 }

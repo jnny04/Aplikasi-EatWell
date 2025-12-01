@@ -41,17 +41,18 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
     val auth = remember { FirebaseAuth.getInstance() }
 
     // --- WARNA & STYLE ---
-    val orangeColor = Color(0xFFFC7100)
-    val inputBackgroundColor = Color(0xFFD3D3D3)
-    val submitButtonColor = Color(0xFF689D5E)
-    val placeholderColor = Color(0xFF9C9C9C)
-    val buttonTextColor = Color(0xFFFCFCFC)
+    // val orangeColor = Color(0xFFFC7100) // ❌ DIGANTI DENGAN MATERIAL THEME
+    // val inputBackgroundColor = Color(0xFFD3D3D3) // ❌ DIGANTI DENGAN MATERIAL THEME
+    val submitButtonColor = Color(0xFF689D5E) // ✅ Warna Tombol Submit (Hijau) tetap statis
+    val placeholderColor = Color(0xFF9C9C9C) // ✅ Warna Placeholder tetap statis
+    val buttonTextColor = Color(0xFFFCFCFC) // ✅ Warna Teks Tombol tetap statis
 
     val inputTextStyle = TextStyle(
         fontFamily = SourceSans3,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
-        color = Color.Black // Warna teks saat mengetik sebaiknya hitam/gelap
+        // 🔥 GANTI: Color.Black → MaterialTheme.colorScheme.onSurface
+        color = MaterialTheme.colorScheme.onSurface
     )
 
     val buttonTextStyle = TextStyle(
@@ -94,7 +95,10 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
     }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().background(Color.White)
+        modifier = Modifier
+            .fillMaxSize()
+            // 🔥 GANTI: Color.White → MaterialTheme.colorScheme.background
+            .background(MaterialTheme.colorScheme.background)
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -119,7 +123,8 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
             // 2. Judul
             Text(
                 text = "Forgot Password?",
-                color = orangeColor,
+                // 🔥 GANTI: orangeColor → MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 style = TextStyle(fontFamily = SourceSerifPro)
@@ -130,6 +135,7 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
             // 3. Penjelasan Flow (Penting agar user paham)
             Text(
                 text = "Enter your email below. We will send a link to reset your password via email.",
+                // ✅ Warna ini (0xFF555555) biarkan statis, karena tidak ada mapping
                 color = Color(0xFF555555),
                 fontSize = 10.sp,
                 style = TextStyle(
@@ -160,9 +166,11 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = inputBackgroundColor,
-                    unfocusedContainerColor = inputBackgroundColor,
-                    cursorColor = orangeColor
+                    // 🔥 GANTI: inputBackgroundColor → MaterialTheme.colorScheme.surfaceVariant
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    // 🔥 GANTI: orangeColor → MaterialTheme.colorScheme.primary
+                    cursorColor = MaterialTheme.colorScheme.primary
                 ),
                 singleLine = true
             )
@@ -174,6 +182,7 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
                 onClick = {
                     if (!isLoading) performPasswordReset()
                 },
+                // ✅ submitButtonColor (Hijau) tetap dipakai di sini.
                 colors = ButtonDefaults.buttonColors(containerColor = submitButtonColor),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -196,7 +205,8 @@ fun ForgotPassScreen(navController: NavHostController) { // ✅ Nama fungsi dise
             // 6. Tombol Back
             Text(
                 text = "< Back to login",
-                color = orangeColor,
+                // 🔥 GANTI: orangeColor → MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp,
                 style = TextStyle(
                     fontFamily = SourceSans3,

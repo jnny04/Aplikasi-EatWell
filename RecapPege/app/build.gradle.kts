@@ -96,6 +96,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
+    implementation(libs.androidx.foundation)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     // --- API & Jaringan ---
