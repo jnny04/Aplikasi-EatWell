@@ -55,32 +55,43 @@ fun ProfileButton(
     photoUrl: String? = null,
     modifier: Modifier = Modifier
 ) {
-    val commonModifier = modifier
+    // 1. Modifier Dasar (Ukuran dan Shape)
+    val baseModifier = modifier
         .padding(7.dp)
-        .size(70.dp)
+        .size(60.dp)
         .clip(CircleShape)
         .clickable {
             navController.navigate(Screen.Profile.route)
         }
 
+    // 2. Modifier Gambar Internal (Untuk memastikan skala)
+    val imageModifier = Modifier
+        .fillMaxSize()
+        // 🔥 TAMBAHAN PENTING: Paksa gambar menutupi area 70dp
+        .clip(CircleShape) // Penting untuk AsyncImage Placeholder
+
+    // --- KASUS A: Ada Foto Profil (AsyncImage) ---
     if (photoUrl != null) {
         AsyncImage(
             model = photoUrl,
             contentDescription = "Profile",
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Crop, // 🔥 PENTING: Paksa potong agar pas di lingkaran
             placeholder = painterResource(id = R.drawable.profile),
             error = painterResource(id = R.drawable.profile),
-            modifier = commonModifier
+            modifier = baseModifier
         )
-    } else {
+    }
+    // --- KASUS B: Tidak Ada Foto (Image Placeholder) ---
+    else {
         Image(
             painter = painterResource(id = R.drawable.profile),
             contentDescription = "Profile",
-            modifier = commonModifier
+            // 🔥 TAMBAHAN PENTING: Gunakan modifier yang sama dengan AsyncImage
+            contentScale = ContentScale.Crop,
+            modifier = baseModifier
         )
     }
 }
-
 // =======================
 // TOP BORDER
 // =======================
