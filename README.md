@@ -1,4 +1,4 @@
-# 🥗 EatWell - Smart Food Diary & Recipe Finder
+# EatWell - Smart Food Diary & Recipe Finder
 
 **EatWell** adalah aplikasi Android cerdas yang membantu pengguna menjaga pola makan sehat melalui pelacakan nutrisi otomatis berbasis AI, rekomendasi resep personal, dan fitur gamifikasi.
 
@@ -6,35 +6,35 @@ Aplikasi ini dibangun menggunakan **Kotlin** dan **Jetpack Compose** dengan arsi
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 
-### 📸 1. AI Food Detection (Smart Scan)
+### 1. AI Food Detection (Smart Scan)
 Deteksi makanan secara instan menggunakan kamera.
 - Menggunakan **Gradio API** (Hugging Face) untuk klasifikasi gambar dan estimasi nutrisi.
 - Sistem **Polling Mechanism** yang efisien untuk menangani *inference time* server AI.
 - Hasil deteksi otomatis dikonversi menjadi log nutrisi harian (Kalori, Protein, Lemak, Karbo).
 
-### 🍲 2. Advanced Recipe Discovery
+### 2. Advanced Recipe Discovery
 - **Spoonacular API Integration:** Mencari ribuan resep dengan detail nutrisi lengkap.
 - **Smart Filtering:** Filter canggih untuk preferensi diet (Vegan, Keto, Gluten-Free) dan **Halal Filter** (secara otomatis mengecualikan bahan non-halal).
 - **Shake to Search:** Fitur unik menggunakan sensor **Accelerometer**; goyangkan HP untuk mendapatkan rekomendasi resep acak!
 
-### 📊 3. Nutritional Tracking & Reporting
+### 3. Nutritional Tracking & Reporting
 - **Daily Dashboard:** Visualisasi sisa kalori dan *macro-nutrients* dengan progress bar animasi.
 - **Weekly & Monthly Recap:** Laporan visual asupan makanan pengguna.
 - **PDF Export:** Generate laporan nutrisi bulanan ke dalam format PDF secara native (tanpa library berat).
 
-### 🎮 4. Gamification (Streak System)
+### 4. Gamification (Streak System)
 - Sistem **Daily Streak** untuk memotivasi pengguna tetap konsisten.
 - Data streak disimpan dengan aman menggunakan **EncryptedSharedPreferences**.
 
-### 🔒 5. Security & Privacy
+### 5. Security & Privacy
 - **Biometric Login:** Mendukung otentikasi sidik jari dan pemindai wajah.
 - **Security Logging:** Mencatat aktivitas login dan *suspicious actions* ke Firestore untuk audit keamanan.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 Aplikasi ini dikembangkan dengan standar industri modern:
 
@@ -50,7 +50,7 @@ Aplikasi ini dikembangkan dengan standar industri modern:
 
 ---
 
-## ⚡ Technical Highlights (Performance & Efficiency)
+## Technical Highlights (Performance & Efficiency)
 
 Proyek ini tidak hanya sekadar berjalan, tetapi dioptimalkan untuk efisiensi:
 
@@ -68,7 +68,7 @@ Proyek ini tidak hanya sekadar berjalan, tetapi dioptimalkan untuk efisiensi:
 
 ---
 
-## 🚀 Setup & Installation
+## Setup & Installation
 
 Untuk menjalankan proyek ini di lokal:
 
